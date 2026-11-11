@@ -39,10 +39,44 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
             return@withContext SendResult.Failure("Recipient WhatsApp number is not configured.")
         }
 
-        if (preferences.apiMode == "WEBHOOK") {
-            sendViaWebhook(recipientNumber, messageText, trxId)
-        } else {
-            sendViaCloudApi(recipientNumber, messageText)
+        when (preferences.apiMode) {
+            "CALLMEBOT" -> sendViaCallMeBot(recipientNumber, messageText)
+            "WEBHOOK" -> sendViaWebhook(recipientNumber, messageText, trxId)
+            else -> sendViaCloudApi(recipientNumber, messageText)
+        }
+    }
+
+    /**
+     * Sends message using CallMeBot WhatsApp API (Fast, Free, 30-Second Setup for everyone).
+     */
+    private fun sendViaCallMeBot(recipient: String, messageText: String): SendResult {
+        val apiKey = preferences.callMeBotApiKey
+        if (apiKey.isBlank()) {
+            return SendResult.Failure("CallMeBot API Key is missing. Enter your key in Settings.")
+        }
+
+        val cleanPhone = preferences.getFormattedRecipientNumber()
+        if (cleanPhone.isBlank()) {
+            return SendResult.Failure("Recipient phone number is missing.")
+        }
+
+        return try {
+            val encodedText = URLEncoder.encode(messageText, "UTF-8")
+            val url = "https://api.callmebot.com/whatsapp.php?phone=$cleanPhone&text=$encodedText&apikey=$apiKey"
+            val request = Request.Builder().url(url).get().build()
+            val response = client.newCall(request).execute()
+            val responseString = response.body?.string() ?: ""
+
+            if (response.isSuccessful && !responseString.contains("ERROR", ignoreCase = true)) {
+                Log.i(TAG, "CallMeBot message delivered successfully.")
+                SendResult.Success(messageId = null, responseBody = responseString)
+            } else {
+                SendResult.Failure("CallMeBot Error: $responseString", statusCode = response.code)
+            }
+        } catch (e: IOException) {
+            SendResult.Failure("Network error: ${e.localizedMessage}", isNetworkError = true)
+        } catch (e: Exception) {
+            SendResult.Failure("CallMeBot error: ${e.localizedMessage}")
         }
     }
 

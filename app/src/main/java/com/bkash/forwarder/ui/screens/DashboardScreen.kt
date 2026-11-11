@@ -532,8 +532,8 @@ fun DashboardScreen(
             testResult = testResult,
             onTestConnection = { viewModel.sendTestMessage() },
             onDismiss = { showSettingsDialog = false },
-            onSave = { mode, phoneId, token, recipient, webhook, header, retry ->
-                viewModel.saveSettings(mode, phoneId, token, recipient, webhook, header, retry)
+            onSave = { mode, callMeBotKey, phoneId, token, recipient, webhook, header, retry ->
+                viewModel.saveSettings(mode, callMeBotKey, phoneId, token, recipient, webhook, header, retry)
             }
         )
     }

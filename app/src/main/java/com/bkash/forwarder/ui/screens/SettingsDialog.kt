@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -62,6 +64,7 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onSave: (
         apiMode: String,
+        callMeBotApiKey: String,
         phoneId: String,
         accessToken: String,
         recipient: String,
@@ -71,6 +74,7 @@ fun SettingsDialog(
     ) -> Unit
 ) {
     var apiMode by remember { mutableStateOf(preferences.apiMode) }
+    var callMeBotApiKey by remember { mutableStateOf(preferences.callMeBotApiKey) }
     var recipientNumber by remember { mutableStateOf(preferences.recipientWhatsAppNumber) }
     var phoneId by remember { mutableStateOf(preferences.cloudPhoneNumberId) }
     var accessToken by remember { mutableStateOf(preferences.cloudAccessToken) }
@@ -115,15 +119,15 @@ fun SettingsDialog(
                     color = TextPrimary
                 )
                 Text(
-                    text = "Configure API delivery for incoming bKash alerts",
+                    text = "Choose your delivery method & target number",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Sleek Segmented Mode Selector
+                // 3-Mode Segmented Selector
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -132,95 +136,123 @@ fun SettingsDialog(
                         .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
                         .padding(3.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (apiMode == "CLOUD_API") AccentPrimary else Color.Transparent)
-                            .clickable { apiMode = "CLOUD_API" }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Meta Cloud API",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (apiMode == "CLOUD_API") FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (apiMode == "CLOUD_API") AccentPrimaryText else TextSecondary,
-                            fontSize = 13.sp
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (apiMode == "WEBHOOK") AccentPrimary else Color.Transparent)
-                            .clickable { apiMode = "WEBHOOK" }
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Custom Webhook",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (apiMode == "WEBHOOK") FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (apiMode == "WEBHOOK") AccentPrimaryText else TextSecondary,
-                            fontSize = 13.sp
-                        )
-                    }
+                    ModeTabItem(
+                        label = "CallMeBot",
+                        selected = apiMode == "CALLMEBOT",
+                        onClick = { apiMode = "CALLMEBOT" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
+                        label = "Cloud API",
+                        selected = apiMode == "CLOUD_API",
+                        onClick = { apiMode = "CLOUD_API" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
+                        label = "Webhook",
+                        selected = apiMode == "WEBHOOK",
+                        onClick = { apiMode = "WEBHOOK" },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Recipient WhatsApp Number
+                // Recipient WhatsApp Number (common to all)
                 OutlinedTextField(
                     value = recipientNumber,
                     onValueChange = { recipientNumber = it },
-                    label = { Text("Recipient WhatsApp Number") },
+                    label = { Text("Your WhatsApp Number") },
                     placeholder = { Text("88017XXXXXXXX") },
-                    supportingText = { Text("Include country code (e.g. 880 for BD)", color = TextMuted) },
+                    supportingText = { Text("Auto-formats with country code (e.g. 88017...)", color = TextMuted) },
                     singleLine = true,
                     colors = textFieldColors,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                if (apiMode == "CLOUD_API") {
-                    OutlinedTextField(
-                        value = phoneId,
-                        onValueChange = { phoneId = it },
-                        label = { Text("Meta Phone Number ID") },
-                        placeholder = { Text("109283746592817") },
-                        singleLine = true,
-                        colors = textFieldColors,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                when (apiMode) {
+                    "CALLMEBOT" -> {
+                        // Helpful 30-sec CallMeBot guide card
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "⚡ 30-Second Free Setup:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "1. Send: 'I allow callmebot to send me messages' to +34 941 83 07 48 on WhatsApp.\n2. Paste the API key you receive below.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    OutlinedTextField(
-                        value = accessToken,
-                        onValueChange = { accessToken = it },
-                        label = { Text("System User Access Token") },
-                        placeholder = { Text("EAABw...") },
-                        supportingText = { Text("Permanent token from Meta Business Manager", color = TextMuted) },
-                        colors = textFieldColors,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else {
-                    OutlinedTextField(
-                        value = webhookUrl,
-                        onValueChange = { webhookUrl = it },
-                        label = { Text("Gateway URL") },
-                        placeholder = { Text("https://api.callmebot.com/whatsapp.php?phone=...&apikey=...") },
-                        supportingText = { Text("CallMeBot, Baileys, Evolution API, or HTTP endpoint", color = TextMuted) },
-                        colors = textFieldColors,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                        OutlinedTextField(
+                            value = callMeBotApiKey,
+                            onValueChange = { callMeBotApiKey = it },
+                            label = { Text("CallMeBot API Key") },
+                            placeholder = { Text("e.g. 948201") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    "CLOUD_API" -> {
+                        OutlinedTextField(
+                            value = phoneId,
+                            onValueChange = { phoneId = it },
+                            label = { Text("Meta Phone Number ID") },
+                            placeholder = { Text("109283746592817") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = accessToken,
+                            onValueChange = { accessToken = it },
+                            label = { Text("System User Access Token") },
+                            placeholder = { Text("EAABw...") },
+                            supportingText = { Text("Permanent token from Meta Business Manager", color = TextMuted) },
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    "WEBHOOK" -> {
+                        OutlinedTextField(
+                            value = webhookUrl,
+                            onValueChange = { webhookUrl = it },
+                            label = { Text("Gateway URL") },
+                            placeholder = { Text("https://your-server.com/webhook") },
+                            supportingText = { Text("Custom HTTP POST endpoint or gateway", color = TextMuted) },
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -228,7 +260,7 @@ fun SettingsDialog(
                 OutlinedTextField(
                     value = customHeader,
                     onValueChange = { customHeader = it },
-                    label = { Text("Message Header") },
+                    label = { Text("Alert Header") },
                     singleLine = true,
                     colors = textFieldColors,
                     shape = RoundedCornerShape(10.dp),
@@ -253,7 +285,7 @@ fun SettingsDialog(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Automatically resend failed alerts when internet restores",
+                            text = "Resend failed alerts when internet restores",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary,
                             fontSize = 12.sp
@@ -277,7 +309,7 @@ fun SettingsDialog(
                 // Test Message Button
                 OutlinedButton(
                     onClick = {
-                        onSave(apiMode, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
+                        onSave(apiMode, callMeBotApiKey, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
                         onTestConnection()
                     },
                     modifier = Modifier
@@ -330,7 +362,7 @@ fun SettingsDialog(
 
                     Button(
                         onClick = {
-                            onSave(apiMode, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
+                            onSave(apiMode, callMeBotApiKey, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
                             onDismiss()
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -347,5 +379,30 @@ fun SettingsDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ModeTabItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) AccentPrimary else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) AccentPrimaryText else TextSecondary,
+            fontSize = 12.sp
+        )
     }
 }

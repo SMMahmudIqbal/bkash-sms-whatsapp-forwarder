@@ -13,7 +13,8 @@ class AppPreferences(context: Context) {
         private const val PREFS_NAME = "bkash_forwarder_prefs"
 
         private const val KEY_FORWARDING_ENABLED = "key_forwarding_enabled"
-        private const val KEY_API_MODE = "key_api_mode" // "CLOUD_API" or "WEBHOOK"
+        private const val KEY_API_MODE = "key_api_mode" // "CALLMEBOT", "CLOUD_API", or "WEBHOOK"
+        private const val KEY_CALLMEBOT_API_KEY = "key_callmebot_api_key"
         private const val KEY_PHONE_NUMBER_ID = "key_phone_number_id"
         private const val KEY_ACCESS_TOKEN = "key_access_token"
         private const val KEY_RECIPIENT_NUMBER = "key_recipient_number"
@@ -38,8 +39,12 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_FORWARDING_ENABLED, value).apply()
 
     var apiMode: String
-        get() = prefs.getString(KEY_API_MODE, "CLOUD_API") ?: "CLOUD_API"
+        get() = prefs.getString(KEY_API_MODE, "CALLMEBOT") ?: "CALLMEBOT"
         set(value) = prefs.edit().putString(KEY_API_MODE, value).apply()
+
+    var callMeBotApiKey: String
+        get() = prefs.getString(KEY_CALLMEBOT_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_CALLMEBOT_API_KEY, value.trim()).apply()
 
     var cloudPhoneNumberId: String
         get() = prefs.getString(KEY_PHONE_NUMBER_ID, "") ?: ""
