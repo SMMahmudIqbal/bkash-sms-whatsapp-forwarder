@@ -2,27 +2,30 @@ package com.bkash.forwarder.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Minimalist, high-aesthetic dark and clean palette (inspired by Nothing OS & Linear)
-val PitchDark = Color(0xFF0D0F12)
-val SurfaceDark = Color(0xFF16191E)
-val SurfaceVariantDark = Color(0xFF20242B)
-val BorderDark = Color(0xFF2C323C)
+// Minimalist, high-end Monochromatic & Zinc Palette (inspired by Nothing OS & Linear)
+val PitchDark = Color(0xFF09090B)           // Zinc 950 - Pure deep OLED background
+val SurfaceDark = Color(0xFF141417)         // Refined card surface
+val SurfaceSubtle = Color(0xFF1A1A1E)       // Interactive element surface
+val BorderDark = Color(0xFF26262B)          // Crisp 1px card boundary
+val BorderActive = Color(0xFF3F3F46)        // Focused boundary
 
-val AccentBkash = Color(0xFFE2136E) // Iconic bKash Pink
-val AccentGreen = Color(0xFF10B981) // WhatsApp Green
-val StatusSuccess = Color(0xFF22C55E)
-val StatusFailed = Color(0xFFEF4444)
-val StatusPending = Color(0xFFF59E0B)
+// Restrained, premium status accents (used as dots/pills, never loud full-bleed slabs)
+val AccentPrimary = Color(0xFFFFFFFF)       // Crisp white primary action
+val AccentPrimaryText = Color(0xFF09090B)   // Text on primary button
+val AccentEmerald = Color(0xFF10B981)       // Subtle success dot / active indicator
+val AccentAmber = Color(0xFFF59E0B)         // Subtle pending dot
+val AccentRose = Color(0xFFF43F5E)          // Subtle error dot
+val AccentBrand = Color(0xFFE11D48)         // bKash brand hint (used minimally)
 
-val TextPrimaryDark = Color(0xFFF1F5F9)
-val TextSecondaryDark = Color(0xFF94A3B8)
-val TextMutedDark = Color(0xFF64748B)
+// Typography & Content hierarchy
+val TextPrimary = Color(0xFFFAFAFA)         // High contrast text
+val TextSecondary = Color(0xFFA1A1AA)       // Zinc 400 - body & captions
+val TextMuted = Color(0xFF71717A)           // Zinc 500 - meta & hints
+val TextFaint = Color(0xFF52525B)           // Zinc 600 - subtle footer credit
 
-// Light Theme Palette
-val SurfaceLight = Color(0xFFF8FAFC)
-val SurfaceVariantLight = Color(0xFFF1F5F9)
-val CardLight = Color(0xFFFFFFFF)
-val BorderLight = Color(0xFFE2E8F0)
-val TextPrimaryLight = Color(0xFF0F172A)
-val TextSecondaryLight = Color(0xFF475569)
-val TextMutedLight = Color(0xFF94A3B8)
+// Light Theme equivalents (if user switches OS theme)
+val SurfaceLight = Color(0xFFFFFFFF)
+val BackgroundLight = Color(0xFFF4F4F5)
+val BorderLight = Color(0xFFE4E4E7)
+val TextPrimaryLight = Color(0xFF09090B)
+val TextSecondaryLight = Color(0xFF52525B)

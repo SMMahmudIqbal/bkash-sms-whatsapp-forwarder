@@ -1,6 +1,7 @@
 package com.bkash.forwarder.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,14 +26,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.bkash.forwarder.ui.theme.AccentBkash
-import com.bkash.forwarder.ui.theme.AccentGreen
+import com.bkash.forwarder.ui.theme.AccentPrimary
+import com.bkash.forwarder.ui.theme.AccentPrimaryText
+import com.bkash.forwarder.ui.theme.BorderDark
+import com.bkash.forwarder.ui.theme.SurfaceDark
+import com.bkash.forwarder.ui.theme.SurfaceSubtle
+import com.bkash.forwarder.ui.theme.TextMuted
+import com.bkash.forwarder.ui.theme.TextPrimary
+import com.bkash.forwarder.ui.theme.TextSecondary
 
 @Composable
 fun RestrictedSettingsGuideDialog(
@@ -46,121 +52,115 @@ fun RestrictedSettingsGuideDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
+            shape = RoundedCornerShape(18.dp),
+            color = SurfaceDark,
+            tonalElevation = 0.dp,
             modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .padding(vertical = 20.dp)
+                .fillMaxWidth(0.92f)
+                .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                .padding(vertical = 16.dp)
         ) {
             Column(
                 modifier = Modifier
                     .padding(22.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                // Header
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "🛡️",
-                        fontSize = 28.sp
-                    )
-                    Column {
-                        Text(
-                            text = "How to Allow SMS Access",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Android 13 / 14 / 15 / 16 Security Guide",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AccentBkash
-                        )
-                    }
-                }
+                Text(
+                    text = "SMS Permission Unlock",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = "Android 13 / 14 / 15 / 16 Restricted Settings",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    fontSize = 11.sp
+                )
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Explanatory note
                 Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Google Android automatically restricts SMS permission for newly installed APK files until you unlock 'Restricted Settings'. This takes only 10 seconds:",
+                        text = "Android automatically locks SMS permission for sideloaded APKs. You can unlock it in 10 seconds following these steps:",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                        modifier = Modifier.padding(14.dp)
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(12.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Step-by-step instructions
-                GuideStepItem(
-                    stepNumber = "1",
+                CleanStepItem(
+                    step = "1",
                     title = "Tap 'Open App Settings' below",
-                    subtitle = "This opens the phone's system App Info page for bKash Forwarder."
+                    description = "Opens the phone's App Info page for bKash Forwarder."
                 )
 
-                GuideStepItem(
-                    stepNumber = "2",
-                    title = "Tap the 3 dots (⋮) in the top-right",
-                    subtitle = "In the top-right corner of the system page, tap the 3 vertical dots (or 'More')."
+                CleanStepItem(
+                    step = "2",
+                    title = "Tap 3 vertical dots (⋮) top-right",
+                    description = "In the top right corner of the system page, tap ⋮ (or 'More')."
                 )
 
-                GuideStepItem(
-                    stepNumber = "3",
+                CleanStepItem(
+                    step = "3",
                     title = "Tap 'Allow restricted settings'",
-                    subtitle = "Confirm with your fingerprint, face unlock, or screen lock PIN."
+                    description = "Confirm with your fingerprint or screen lock PIN."
                 )
 
-                GuideStepItem(
-                    stepNumber = "4",
+                CleanStepItem(
+                    step = "4",
                     title = "Tap 'Permissions' ➔ 'SMS' ➔ 'Allow'",
-                    subtitle = "Now SMS permission is unlocked! Toggle it to Allow."
+                    description = "SMS access is now unlocked! Return to the app."
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Action Buttons
+                // Primary Action Button (Sleek solid white)
                 Button(
                     onClick = {
                         onOpenAppSettings()
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentBkash),
-                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentPrimary,
+                        contentColor = AccentPrimaryText
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
                     shape = RoundedCornerShape(10.dp)
                 ) {
                     Text(
-                        text = "1️⃣ Open App Settings Now",
+                        text = "Open App Settings",
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Alternative: Notification Listener
-                Button(
+                // Alternative: Notification Interception
+                OutlinedButton(
                     onClick = {
                         onOpenNotificationSettings()
                         onDismiss()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
                 ) {
                     Text(
-                        text = "2️⃣ Alternative: Enable Notification Access",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
+                        text = "Or Use Notification Access",
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
@@ -168,8 +168,11 @@ fun RestrictedSettingsGuideDialog(
 
                 OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                 ) {
                     Text("Close")
                 }
@@ -179,42 +182,47 @@ fun RestrictedSettingsGuideDialog(
 }
 
 @Composable
-private fun GuideStepItem(
-    stepNumber: String,
+private fun CleanStepItem(
+    step: String,
     title: String,
-    subtitle: String
+    description: String
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 5.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.Top
     ) {
         Box(
             modifier = Modifier
-                .size(26.dp)
-                .background(AccentBkash, CircleShape),
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(SurfaceSubtle)
+                .border(1.dp, BorderDark, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = stepNumber,
-                color = Color.White,
+                text = step,
+                color = TextPrimary,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp
             )
         }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = TextPrimary,
+                fontSize = 13.sp
             )
             Text(
-                text = subtitle,
+                text = description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                color = TextSecondary,
                 fontSize = 12.sp
             )
         }

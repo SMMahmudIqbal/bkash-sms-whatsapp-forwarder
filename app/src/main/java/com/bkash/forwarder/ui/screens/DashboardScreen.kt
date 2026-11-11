@@ -1,7 +1,7 @@
 package com.bkash.forwarder.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -47,13 +48,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bkash.forwarder.data.local.ForwardStatus
 import com.bkash.forwarder.data.local.TransactionRecord
 import com.bkash.forwarder.ui.ForwarderViewModel
-import com.bkash.forwarder.ui.theme.AccentBkash
-import com.bkash.forwarder.ui.theme.AccentGreen
-import com.bkash.forwarder.ui.theme.StatusFailed
-import com.bkash.forwarder.ui.theme.StatusPending
-import com.bkash.forwarder.ui.theme.StatusSuccess
+import com.bkash.forwarder.ui.theme.AccentAmber
+import com.bkash.forwarder.ui.theme.AccentEmerald
+import com.bkash.forwarder.ui.theme.AccentPrimary
+import com.bkash.forwarder.ui.theme.AccentPrimaryText
+import com.bkash.forwarder.ui.theme.AccentRose
+import com.bkash.forwarder.ui.theme.BorderDark
+import com.bkash.forwarder.ui.theme.PitchDark
+import com.bkash.forwarder.ui.theme.SurfaceDark
+import com.bkash.forwarder.ui.theme.SurfaceSubtle
+import com.bkash.forwarder.ui.theme.TextFaint
+import com.bkash.forwarder.ui.theme.TextMuted
+import com.bkash.forwarder.ui.theme.TextPrimary
+import com.bkash.forwarder.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -91,16 +101,16 @@ fun DashboardScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = PitchDark
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 1. Top Header Bar
+            // 1. Sleek Top Header Bar
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -111,83 +121,88 @@ fun DashboardScreen(
                         Text(
                             text = "bKash Forwarder",
                             style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
+                                    .size(6.dp)
                                     .clip(CircleShape)
-                                    .background(if (isEnabled) StatusSuccess else StatusPending)
+                                    .background(if (isEnabled) AccentEmerald else TextMuted)
                             )
                             Text(
                                 text = if (isEnabled) "Active & Listening" else "Forwarding Paused",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (isEnabled) StatusSuccess else StatusPending
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (isEnabled) AccentEmerald else TextMuted,
+                                fontSize = 12.sp
                             )
                         }
                     }
 
-                    OutlinedButton(
-                        onClick = { showSettingsDialog = true },
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SurfaceDark)
+                            .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                            .clickable { showSettingsDialog = true }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = "⚙️ Settings",
+                            text = "Settings",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
                         )
                     }
                 }
             }
 
-            // 2. Detection Channel Status & Setup Card
+            // 2. Minimalist Detection Channels Status Card
             item {
                 Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (!hasSmsPermissions && !isNotificationAccessEnabled) {
-                            StatusFailed.copy(alpha = 0.12f)
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Interception Channels",
+                                text = "Detection Channels",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
                             )
-                            if (hasSmsPermissions || isNotificationAccessEnabled) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(StatusSuccess.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "READY",
-                                        color = StatusSuccess,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                            val isReady = hasSmsPermissions || isNotificationAccessEnabled
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (isReady) AccentEmerald.copy(alpha = 0.12f) else AccentAmber.copy(alpha = 0.12f))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (isReady) "READY" else "ACTION REQUIRED",
+                                    color = if (isReady) AccentEmerald else AccentAmber,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp
+                                )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        // Channel 1: Direct SMS Listener
+                        // Channel 1: Direct SMS
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -196,35 +211,29 @@ fun DashboardScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Direct SMS Interception",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextPrimary
                                 )
                                 Text(
-                                    text = if (hasSmsPermissions) "Active & monitoring bKash messages" else "Requires SMS permission (Tap 'How to Allow')",
+                                    text = if (hasSmsPermissions) "Active & monitoring" else "Requires SMS permission",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                    fontSize = 11.sp
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
                                 )
                             }
                             if (hasSmsPermissions) {
-                                Text(
-                                    text = "✅ Active",
-                                    color = StatusSuccess,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                StatusPill(label = "Active", isGood = true)
                             } else {
-                                Button(
-                                    onClick = { showRestrictedGuideDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = AccentBkash),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("How to Allow", style = MaterialTheme.typography.labelSmall)
-                                }
+                                MinimalActionChip(
+                                    label = "How to Allow",
+                                    onClick = { showRestrictedGuideDialog = true }
+                                )
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = BorderDark, thickness = 0.8.dp)
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Channel 2: Notification Listener
@@ -235,51 +244,43 @@ fun DashboardScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Notification Interception (Alternative)",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold
+                                    text = "Notification Interception",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextPrimary
                                 )
                                 Text(
-                                    text = if (isNotificationAccessEnabled) "Active & capturing SMS/bKash alerts" else "Captures bKash alerts from notifications",
+                                    text = if (isNotificationAccessEnabled) "Active & capturing notifications" else "Captures bKash alerts from notifications",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                    fontSize = 11.sp
+                                    color = TextSecondary,
+                                    fontSize = 12.sp
                                 )
                             }
                             if (isNotificationAccessEnabled) {
-                                Text(
-                                    text = "✅ Active",
-                                    color = StatusSuccess,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                StatusPill(label = "Active", isGood = true)
                             } else {
-                                Button(
-                                    onClick = onOpenNotificationSettings,
-                                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("Turn On", style = MaterialTheme.typography.labelSmall)
-                                }
+                                MinimalActionChip(
+                                    label = "Turn On",
+                                    onClick = onOpenNotificationSettings
+                                )
                             }
                         }
                     }
                 }
             }
 
-            // 3. Battery Optimization Banner (if not whitelisted)
+            // 3. Battery Whitelist (Clean Minimalist Banner)
             if (!isBatteryOptimized) {
                 item {
                     Card(
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
                     ) {
                         Row(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -287,58 +288,60 @@ fun DashboardScreen(
                                 Text(
                                     text = "Background Reliability",
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextPrimary
                                 )
                                 Text(
-                                    text = "Allow background run without battery restrictions to ensure zero missed SMS.",
+                                    text = "Exempt app from battery saver to avoid sleep delay",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                                    color = TextSecondary,
                                     fontSize = 12.sp
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = onRequestBatteryOptimization,
-                                colors = ButtonDefaults.buttonColors(containerColor = AccentBkash)
-                            ) {
-                                Text("Whitelist")
-                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            MinimalActionChip(
+                                label = "Whitelist",
+                                onClick = onRequestBatteryOptimization
+                            )
                         }
                     }
                 }
             }
 
-            // 4. Master Forwarding Switch Card
+            // 4. Master Forwarding Card
             item {
                 Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Auto Forwarding Service",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                text = "Auto Forwarding",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = if (isEnabled) {
-                                    "Target: ${viewModel.preferences.recipientWhatsAppNumber.ifBlank { "Not set in settings" }}"
+                                    val target = viewModel.preferences.recipientWhatsAppNumber
+                                    if (target.isNotBlank()) "Target: $target" else "Target: Not configured in settings"
                                 } else {
-                                    "Forwarding is stopped"
+                                    "Forwarding is paused"
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                color = TextSecondary,
+                                fontSize = 12.sp
                             )
                         }
 
@@ -346,42 +349,43 @@ fun DashboardScreen(
                             checked = isEnabled,
                             onCheckedChange = { viewModel.setForwardingEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = AccentBkash
+                                checkedThumbColor = PitchDark,
+                                checkedTrackColor = AccentPrimary,
+                                uncheckedThumbColor = TextMuted,
+                                uncheckedTrackColor = SurfaceSubtle,
+                                uncheckedBorderColor = BorderDark
                             )
                         )
                     }
                 }
             }
 
-            // 5. Metric Summary (3 Stats Counters)
+            // 5. Clean Metric Counters (Minimalist Monospaced / Pure White numbers)
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    MetricCard(
+                    CleanMetricCard(
                         modifier = Modifier.weight(1f),
-                        title = "Received",
-                        count = stats.first.toString(),
-                        accentColor = MaterialTheme.colorScheme.onSurface
+                        label = "RECEIVED",
+                        count = stats.first.toString()
                     )
-                    MetricCard(
+                    CleanMetricCard(
                         modifier = Modifier.weight(1f),
-                        title = "Forwarded",
-                        count = stats.second.toString(),
-                        accentColor = StatusSuccess
+                        label = "FORWARDED",
+                        count = stats.second.toString()
                     )
-                    MetricCard(
+                    CleanMetricCard(
                         modifier = Modifier.weight(1f),
-                        title = "Pending/Fail",
+                        label = "PENDING / FAIL",
                         count = stats.third.toString(),
-                        accentColor = if (stats.third > 0) StatusFailed else StatusPending
+                        isAlert = stats.third > 0
                     )
                 }
             }
 
-            // 6. Action Bar (Test WhatsApp, Retry Pending, Clear History)
+            // 6. Primary Action: Crisp Monochrome Button
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -389,34 +393,44 @@ fun DashboardScreen(
                 ) {
                     Button(
                         onClick = { viewModel.sendTestMessage() },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentPrimary,
+                            contentColor = AccentPrimaryText
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp),
                         enabled = !isTesting
                     ) {
                         Text(
-                            text = if (isTesting) "Sending..." else "Send Test WA",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = if (isTesting) "Sending Test..." else "Send Test WhatsApp",
+                            style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
 
                     if (stats.third > 0) {
-                        Button(
+                        OutlinedButton(
                             onClick = { viewModel.retryAll() },
-                            colors = ButtonDefaults.buttonColors(containerColor = AccentBkash),
-                            modifier = Modifier.weight(1f)
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(46.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
                         ) {
                             Text(
-                                text = "Retry All (${stats.third})",
+                                text = "Retry (${stats.third})",
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
 
                     if (records.isNotEmpty()) {
                         OutlinedButton(
-                            onClick = { showClearConfirm = true }
+                            onClick = { showClearConfirm = true },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(46.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                         ) {
                             Text("Clear", style = MaterialTheme.typography.bodyMedium)
                         }
@@ -424,22 +438,25 @@ fun DashboardScreen(
                 }
             }
 
-            // 7. Recent Forwarding History Header
+            // 7. Recent Forwarding History
             item {
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Transaction History",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        text = "Recent Transactions",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
                     )
                     Text(
                         text = "${records.size} logged",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f)
+                        color = TextMuted,
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -448,57 +465,59 @@ fun DashboardScreen(
             if (records.isEmpty()) {
                 item {
                     Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, BorderDark, RoundedCornerShape(14.dp))
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 40.dp, horizontal = 20.dp),
+                                .padding(vertical = 36.dp, horizontal = 20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "📱 Waiting for bKash SMS",
+                                text = "Waiting for bKash alerts",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center
+                                fontWeight = FontWeight.Medium,
+                                color = TextPrimary
                             )
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "When a bKash transaction message arrives, it will be automatically detected, deduplicated, and forwarded to your WhatsApp number.",
+                                text = "Incoming bKash transaction SMS or notifications will appear here and auto-forward to WhatsApp.",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                textAlign = TextAlign.Center
+                                color = TextSecondary,
+                                textAlign = TextAlign.Center,
+                                fontSize = 12.sp
                             )
                         }
                     }
                 }
             } else {
                 items(records, key = { it.trxId }) { record ->
-                    TransactionItemCard(
+                    MinimalistTransactionItem(
                         record = record,
                         onClick = { selectedRecord = record }
                     )
                 }
             }
 
-            // 9. MANDATORY Developer Attribution Rule: Discrete bottom / last scroll area ONLY
+            // 9. Mandatory Discrete Bottom Attribution (Subtle / Low-Contrast / Unobtrusive)
             item {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp),
+                        .padding(bottom = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Developed by S. M. Mahmud Iqbal",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.35f),
-                        fontSize = 11.sp
+                        color = TextFaint,
+                        fontSize = 10.sp,
+                        letterSpacing = 0.5.sp
                     )
                 }
             }
@@ -532,22 +551,23 @@ fun DashboardScreen(
     if (showClearConfirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showClearConfirm = false },
-            title = { Text("Clear Transaction History?") },
-            text = { Text("This will remove all logged transactions and duplicate prevention records.") },
+            containerColor = SurfaceDark,
+            title = { Text("Clear History?", color = TextPrimary, fontWeight = FontWeight.SemiBold) },
+            text = { Text("This removes all logged transactions and reset counters.", color = TextSecondary) },
             confirmButton = {
                 Button(
                     onClick = {
                         viewModel.clearAllHistory()
                         showClearConfirm = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = StatusFailed)
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentRose)
                 ) {
                     Text("Clear All")
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showClearConfirm = false }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextPrimary)
                 }
             }
         )
@@ -564,40 +584,90 @@ fun DashboardScreen(
 }
 
 @Composable
-fun MetricCard(
+fun CleanMetricCard(
     modifier: Modifier = Modifier,
-    title: String,
+    label: String,
     count: String,
-    accentColor: Color
+    isAlert: Boolean = false
 ) {
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = modifier
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        modifier = modifier.border(1.dp, BorderDark, RoundedCornerShape(12.dp))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                fontSize = 12.sp
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = TextMuted,
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = count,
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = accentColor
+                fontWeight = FontWeight.SemiBold,
+                color = if (isAlert) AccentAmber else TextPrimary
             )
         }
     }
 }
 
 @Composable
-fun TransactionItemCard(
+fun MinimalActionChip(
+    label: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(SurfaceSubtle)
+            .border(1.dp, BorderDark, RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = TextPrimary,
+            fontSize = 12.sp
+        )
+    }
+}
+
+@Composable
+fun StatusPill(label: String, isGood: Boolean) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(SurfaceSubtle)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(if (isGood) AccentEmerald else AccentAmber)
+        )
+        Text(
+            text = label,
+            color = if (isGood) AccentEmerald else AccentAmber,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp
+        )
+    }
+}
+
+@Composable
+fun MinimalistTransactionItem(
     record: TransactionRecord,
     onClick: () -> Unit
 ) {
@@ -605,10 +675,11 @@ fun TransactionItemCard(
     val dateStr = dateFormat.format(Date(record.timestamp))
 
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
         modifier = Modifier
             .fillMaxWidth()
+            .border(1.dp, BorderDark, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
     ) {
         Row(
@@ -621,52 +692,85 @@ fun TransactionItemCard(
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = record.trxId,
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = TextSecondary,
+                        fontSize = 11.sp
                     )
-                    Text(
-                        text = "•",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-                    )
+                    Text(text = "•", color = TextMuted, fontSize = 10.sp)
                     Text(
                         text = record.type,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = AccentBkash,
-                        fontWeight = FontWeight.SemiBold
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
                     text = "৳ ${record.amount}",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
                 )
 
                 if (record.counterpart.isNotBlank()) {
                     Text(
                         text = "${record.counterpart} • $dateStr",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        fontSize = 12.sp
+                        color = TextMuted,
+                        fontSize = 11.sp
                     )
                 } else {
                     Text(
                         text = dateStr,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        fontSize = 12.sp
+                        color = TextMuted,
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            StatusBadge(status = record.status)
+            MinimalStatusBadge(status = record.status)
         }
+    }
+}
+
+@Composable
+fun MinimalStatusBadge(status: ForwardStatus) {
+    val (dotColor, label) = when (status) {
+        ForwardStatus.SENT -> Pair(AccentEmerald, "Sent")
+        ForwardStatus.FAILED -> Pair(AccentRose, "Failed")
+        ForwardStatus.PENDING -> Pair(AccentAmber, "Pending")
+        ForwardStatus.IGNORED_DUPLICATE -> Pair(TextMuted, "Duplicate")
+    }
+
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(SurfaceSubtle)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(dotColor)
+        )
+        Text(
+            text = label,
+            color = TextPrimary,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Normal,
+            fontSize = 11.sp
+        )
     }
 }

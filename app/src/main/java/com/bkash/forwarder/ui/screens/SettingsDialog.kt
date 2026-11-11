@@ -1,6 +1,7 @@
 package com.bkash.forwarder.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -31,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,8 +41,17 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.bkash.forwarder.data.pref.AppPreferences
-import com.bkash.forwarder.ui.theme.AccentBkash
-import com.bkash.forwarder.ui.theme.AccentGreen
+import com.bkash.forwarder.ui.theme.AccentEmerald
+import com.bkash.forwarder.ui.theme.AccentPrimary
+import com.bkash.forwarder.ui.theme.AccentPrimaryText
+import com.bkash.forwarder.ui.theme.AccentRose
+import com.bkash.forwarder.ui.theme.BorderDark
+import com.bkash.forwarder.ui.theme.PitchDark
+import com.bkash.forwarder.ui.theme.SurfaceDark
+import com.bkash.forwarder.ui.theme.SurfaceSubtle
+import com.bkash.forwarder.ui.theme.TextMuted
+import com.bkash.forwarder.ui.theme.TextPrimary
+import com.bkash.forwarder.ui.theme.TextSecondary
 
 @Composable
 fun SettingsDialog(
@@ -66,138 +78,160 @@ fun SettingsDialog(
     var customHeader by remember { mutableStateOf(preferences.customHeader) }
     var autoRetry by remember { mutableStateOf(preferences.isAutoRetryEnabled) }
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = AccentPrimary,
+        unfocusedBorderColor = BorderDark,
+        focusedContainerColor = SurfaceSubtle,
+        unfocusedContainerColor = SurfaceSubtle,
+        focusedTextColor = TextPrimary,
+        unfocusedTextColor = TextPrimary,
+        focusedLabelColor = TextPrimary,
+        unfocusedLabelColor = TextMuted,
+        cursorColor = AccentPrimary
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+            shape = RoundedCornerShape(18.dp),
+            color = SurfaceDark,
+            tonalElevation = 0.dp,
             modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .padding(vertical = 16.dp)
+                .fillMaxWidth(0.92f)
+                .border(1.dp, BorderDark, RoundedCornerShape(18.dp))
+                .padding(vertical = 14.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(20.dp)
+                    .padding(22.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "WhatsApp Integration Settings",
+                    text = "WhatsApp Integration",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
                 )
                 Text(
-                    text = "Configure automated dispatch to your WhatsApp number",
+                    text = "Configure API delivery for incoming bKash alerts",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    color = TextSecondary,
+                    fontSize = 12.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Mode Selector Tabs
+                // Sleek Segmented Mode Selector
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            RoundedCornerShape(10.dp)
-                        )
-                        .padding(4.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceSubtle)
+                        .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        .padding(3.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(
-                                if (apiMode == "CLOUD_API") AccentBkash else Color.Transparent,
-                                RoundedCornerShape(8.dp)
-                            )
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (apiMode == "CLOUD_API") AccentPrimary else Color.Transparent)
                             .clickable { apiMode = "CLOUD_API" }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Meta Cloud API",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (apiMode == "CLOUD_API") FontWeight.Bold else FontWeight.Normal,
-                            color = if (apiMode == "CLOUD_API") Color.White else MaterialTheme.colorScheme.onSurface
+                            fontWeight = if (apiMode == "CLOUD_API") FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (apiMode == "CLOUD_API") AccentPrimaryText else TextSecondary,
+                            fontSize = 13.sp
                         )
                     }
 
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .background(
-                                if (apiMode == "WEBHOOK") AccentBkash else Color.Transparent,
-                                RoundedCornerShape(8.dp)
-                            )
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (apiMode == "WEBHOOK") AccentPrimary else Color.Transparent)
                             .clickable { apiMode = "WEBHOOK" }
-                            .padding(vertical = 10.dp),
+                            .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Custom Webhook",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (apiMode == "WEBHOOK") FontWeight.Bold else FontWeight.Normal,
-                            color = if (apiMode == "WEBHOOK") Color.White else MaterialTheme.colorScheme.onSurface
+                            fontWeight = if (apiMode == "WEBHOOK") FontWeight.SemiBold else FontWeight.Normal,
+                            color = if (apiMode == "WEBHOOK") AccentPrimaryText else TextSecondary,
+                            fontSize = 13.sp
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Recipient WhatsApp Number (common to both)
+                // Recipient WhatsApp Number
                 OutlinedTextField(
                     value = recipientNumber,
                     onValueChange = { recipientNumber = it },
-                    label = { Text("WhatsApp Recipient Number") },
-                    placeholder = { Text("e.g. 8801712345678 or 01712345678") },
-                    supportingText = { Text("Include country code (e.g. 88 for Bangladesh)") },
+                    label = { Text("Recipient WhatsApp Number") },
+                    placeholder = { Text("88017XXXXXXXX") },
+                    supportingText = { Text("Include country code (e.g. 880 for BD)", color = TextMuted) },
                     singleLine = true,
+                    colors = textFieldColors,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 if (apiMode == "CLOUD_API") {
                     OutlinedTextField(
                         value = phoneId,
                         onValueChange = { phoneId = it },
                         label = { Text("Meta Phone Number ID") },
-                        placeholder = { Text("e.g. 109283746592817") },
+                        placeholder = { Text("109283746592817") },
                         singleLine = true,
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     OutlinedTextField(
                         value = accessToken,
                         onValueChange = { accessToken = it },
-                        label = { Text("Meta System User Access Token") },
+                        label = { Text("System User Access Token") },
                         placeholder = { Text("EAABw...") },
-                        supportingText = { Text("Permanent access token from Meta Developer Portal") },
+                        supportingText = { Text("Permanent token from Meta Business Manager", color = TextMuted) },
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
                     OutlinedTextField(
                         value = webhookUrl,
                         onValueChange = { webhookUrl = it },
-                        label = { Text("Webhook / Gateway URL") },
+                        label = { Text("Gateway URL") },
                         placeholder = { Text("https://api.callmebot.com/whatsapp.php?phone=...&apikey=...") },
-                        supportingText = { Text("Supports CallMeBot, Baileys, Evolution API, or custom HTTP endpoint") },
+                        supportingText = { Text("CallMeBot, Baileys, Evolution API, or HTTP endpoint", color = TextMuted) },
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = customHeader,
                     onValueChange = { customHeader = it },
-                    label = { Text("Custom Message Header") },
+                    label = { Text("Message Header") },
                     singleLine = true,
+                    colors = textFieldColors,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -213,47 +247,56 @@ fun SettingsDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Auto-retry on Reconnection",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
+                            text = "Auto-retry on Reconnect",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = TextPrimary
                         )
                         Text(
                             text = "Automatically resend failed alerts when internet restores",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            color = TextSecondary,
                             fontSize = 12.sp
                         )
                     }
                     Switch(
                         checked = autoRetry,
                         onCheckedChange = { autoRetry = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = AccentGreen)
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PitchDark,
+                            checkedTrackColor = AccentPrimary,
+                            uncheckedThumbColor = TextMuted,
+                            uncheckedTrackColor = SurfaceSubtle,
+                            uncheckedBorderColor = BorderDark
+                        )
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Test Message Section
-                Button(
+                // Test Message Button
+                OutlinedButton(
                     onClick = {
-                        // Temporarily apply values before testing
                         onSave(apiMode, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
                         onTestConnection()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isTesting && recipientNumber.isNotBlank()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    enabled = !isTesting && recipientNumber.isNotBlank(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
                 ) {
                     if (isTesting) {
                         CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(18.dp),
+                            color = TextPrimary,
+                            modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text("Sending Test Message...")
+                        Text("Sending Test...")
                     } else {
-                        Text("Send Test WhatsApp Message")
+                        Text("Send Test WhatsApp Message", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -262,21 +305,25 @@ fun SettingsDialog(
                     Text(
                         text = testResult,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (testResult.startsWith("Success")) AccentGreen else MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Medium
+                        color = if (testResult.startsWith("Success")) AccentEmerald else AccentRose,
+                        fontSize = 12.sp
                     )
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Action Buttons
+                // Save & Cancel
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
                     ) {
                         Text("Cancel")
                     }
@@ -286,10 +333,16 @@ fun SettingsDialog(
                             onSave(apiMode, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
                             onDismiss()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentBkash),
-                        modifier = Modifier.weight(1f)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AccentPrimary,
+                            contentColor = AccentPrimaryText
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Save Settings")
+                        Text("Save Settings", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

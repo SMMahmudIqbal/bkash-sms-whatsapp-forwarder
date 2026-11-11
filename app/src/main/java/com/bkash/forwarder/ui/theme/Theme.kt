@@ -12,24 +12,24 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AccentBkash,
-    secondary = AccentGreen,
+    primary = AccentPrimary,
+    onPrimary = AccentPrimaryText,
+    secondary = AccentEmerald,
     background = PitchDark,
     surface = SurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    onPrimary = TextPrimaryDark,
-    onBackground = TextPrimaryDark,
-    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceSubtle,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
     outline = BorderDark
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AccentBkash,
-    secondary = AccentGreen,
-    background = SurfaceLight,
-    surface = CardLight,
-    surfaceVariant = SurfaceVariantLight,
-    onPrimary = CardLight,
+    primary = TextPrimaryLight,
+    onPrimary = SurfaceLight,
+    secondary = AccentEmerald,
+    background = BackgroundLight,
+    surface = SurfaceLight,
+    surfaceVariant = BorderLight,
     onBackground = TextPrimaryLight,
     onSurface = TextPrimaryLight,
     outline = BorderLight
