@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.6"
+        android:scaleY="0.6"
+        android:translateX="21.6"
+        android:translateY="21.6">
+        <!-- bKash Origami / Forwarding Arrow glyph -->
+        <path
+            android:fillColor="#E2136E"
+            android:pathData="M24,20 L84,54 L24,88 L38,54 Z" />
+        <!-- Forwarding sync badge -->
+        <path
+            android:fillColor="#10B981"
+            android:pathData="M65,48 L88,54 L65,60 Z" />
+    </group>
+</vector>
