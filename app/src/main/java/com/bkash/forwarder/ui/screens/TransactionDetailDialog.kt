@@ -1,5 +1,10 @@
 package com.bkash.forwarder.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -27,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,6 +59,7 @@ fun TransactionDetailDialog(
     onDismiss: () -> Unit,
     onRetry: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
     val formattedDate = dateFormat.format(Date(record.timestamp))
 
@@ -180,13 +186,19 @@ fun TransactionDetailDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Raw SMS Card
-                Text(
-                    text = "Raw Message",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary
-                )
+                // Raw SMS Section
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Raw Message (Copy-Paste Text)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = TextPrimary
+                    )
+                }
                 Spacer(modifier = Modifier.height(6.dp))
                 Box(
                     modifier = Modifier
@@ -205,9 +217,59 @@ fun TransactionDetailDialog(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Actions
+                // Quick Copy & WhatsApp Share Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            val clip = ClipData.newPlainText("bKash SMS", record.rawSms)
+                            clipboard?.setPrimaryClip(clip)
+                            Toast.makeText(context, "bKash SMS copied to clipboard!", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
+                    ) {
+                        Text("Copy SMS", fontSize = 12.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, record.rawSms)
+                                setPackage("com.whatsapp")
+                            }
+                            try {
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                val fallback = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, record.rawSms)
+                                }
+                                context.startActivity(Intent.createChooser(fallback, "Share to WhatsApp Group"))
+                            }
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(40.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentEmerald)
+                    ) {
+                        Text("Share to WhatsApp", fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Actions: Close & Retry
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)

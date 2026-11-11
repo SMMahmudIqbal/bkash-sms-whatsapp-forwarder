@@ -101,7 +101,13 @@ class ForwarderRepository(
                     return@withContext false
                 }
 
-                val formattedMsg = tx.toWhatsAppMessage(preferences.customHeader)
+                // Forwarding format: RAW (Exact Copy-Paste) vs FORMATTED (Receipt Card)
+                val messageToSend = if (preferences.forwardMode == "RAW") {
+                    tx.rawSms
+                } else {
+                    tx.toWhatsAppMessage(preferences.customHeader)
+                }
+
                 val newRecord = TransactionRecord(
                     trxId = tx.trxId,
                     type = tx.type,
@@ -111,7 +117,7 @@ class ForwarderRepository(
                     fee = tx.fee,
                     reference = tx.reference,
                     rawSms = tx.rawSms,
-                    forwardedText = formattedMsg,
+                    forwardedText = messageToSend,
                     status = ForwardStatus.PENDING,
                     retryCount = 0,
                     errorMessage = null,
@@ -123,9 +129,9 @@ class ForwarderRepository(
                 dbHelper.insertTransaction(newRecord)
                 refreshData()
 
-                // Dispatch to WhatsApp
+                // Dispatch to WhatsApp Group or Number
                 val sendResult = apiService.sendMessage(
-                    messageText = formattedMsg,
+                    messageText = messageToSend,
                     trxId = tx.trxId
                 )
 
@@ -215,16 +221,25 @@ class ForwarderRepository(
     }
 
     /**
-     * Sends a test message to the configured WhatsApp number to verify API credentials.
+     * Sends a test message to the configured WhatsApp group or number to verify API credentials.
      */
     suspend fun sendTestMessage(): SendResult = withContext(Dispatchers.IO) {
-        val testBody = buildString {
-            appendLine("✅ *bKash SMS Forwarder - Test Connection*")
-            appendLine("━━━━━━━━━━━━━━━━━━━")
-            appendLine("Your WhatsApp connection is active and working properly!")
-            appendLine("Incoming bKash transactions will be forwarded here automatically.")
-            appendLine("━━━━━━━━━━━━━━━━━━━")
-            append("_⚡ Developed by S. M. Mahmud Iqbal_")
+        val targetLabel = if (preferences.recipientType == "GROUP") "WhatsApp Group" else "WhatsApp Chat"
+        val modeLabel = if (preferences.forwardMode == "RAW") "Exact Copy-Paste (Raw SMS)" else "Formatted Receipt Card"
+
+        val testBody = if (preferences.forwardMode == "RAW") {
+            "[bKash Forwarder Test] Connection verified! Incoming bKash messages will be copy-pasted directly into this $targetLabel."
+        } else {
+            buildString {
+                appendLine("✅ *bKash SMS Forwarder - Test Connection*")
+                appendLine("━━━━━━━━━━━━━━━━━━━")
+                appendLine("Destination: $targetLabel (${preferences.getFormattedRecipient()})")
+                appendLine("Forward Mode: $modeLabel")
+                appendLine("Your WhatsApp connection is active and working properly!")
+                appendLine("Incoming bKash transactions will be forwarded here automatically.")
+                appendLine("━━━━━━━━━━━━━━━━━━━")
+                append("_⚡ Developed by S. M. Mahmud Iqbal_")
+            }
         }
         apiService.sendMessage(messageText = testBody, trxId = "TEST-CONN")
     }

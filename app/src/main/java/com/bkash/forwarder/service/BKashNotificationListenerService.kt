@@ -40,11 +40,12 @@ class BKashNotificationListenerService : NotificationListenerService() {
 
         val pkgName = sbn.packageName.lowercase()
 
-        // Filter: Must be from bKash app OR any SMS messaging app OR contain bKash / 16247
+        // Filter: Must be from bKash app OR any SMS messaging app OR contain bKash / 16247 with TrxID
         val isBkashApp = pkgName.contains("bkash")
         val isSmsApp = pkgName.contains("messaging") ||
                 pkgName.contains("mms") ||
                 pkgName.contains("sms") ||
+                pkgName.contains("telephony") ||
                 pkgName.contains("google.android.apps.messaging") ||
                 pkgName.contains("samsung.android.messaging")
         val isBkashContent = title.contains("bkash", ignoreCase = true) ||
@@ -52,8 +53,13 @@ class BKashNotificationListenerService : NotificationListenerService() {
                 fullBody.contains("bkash", ignoreCase = true) ||
                 fullBody.contains("16247") ||
                 fullBody.contains("TrxID", ignoreCase = true)
+        val isExplicitBkashTransaction = (title.contains("bkash", ignoreCase = true) ||
+                title.contains("16247") ||
+                fullBody.contains("bkash", ignoreCase = true) ||
+                fullBody.contains("16247")) &&
+                fullBody.contains("trxid", ignoreCase = true)
 
-        if (!((isBkashApp || isSmsApp) && isBkashContent)) {
+        if (!((isBkashApp || isSmsApp) && isBkashContent) && !isExplicitBkashTransaction) {
             return
         }
 

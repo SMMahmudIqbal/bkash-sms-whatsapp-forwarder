@@ -111,6 +111,9 @@ class ForwarderViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun saveSettings(
         apiMode: String,
+        recipientType: String,
+        forwardMode: String,
+        textMeBotApiKey: String,
         callMeBotApiKey: String,
         phoneId: String,
         accessToken: String,
@@ -120,6 +123,9 @@ class ForwarderViewModel(application: Application) : AndroidViewModel(applicatio
         autoRetry: Boolean
     ) {
         preferences.apiMode = apiMode
+        preferences.recipientType = recipientType
+        preferences.forwardMode = forwardMode
+        preferences.textMeBotApiKey = textMeBotApiKey
         preferences.callMeBotApiKey = callMeBotApiKey
         preferences.cloudPhoneNumberId = phoneId
         preferences.cloudAccessToken = accessToken

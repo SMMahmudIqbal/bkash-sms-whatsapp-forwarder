@@ -70,17 +70,13 @@ object BKashSmsParser {
      * Parses an incoming SMS message.
      */
     fun parse(sender: String?, messageBody: String?): ParseResult {
-        if (!isBkashSender(sender)) {
-            return ParseResult.NonBkashSender(sender ?: "unknown")
-        }
-
         if (messageBody.isNullOrBlank()) {
             return ParseResult.NotATransaction("Empty message body")
         }
 
         val cleanBody = messageBody.trim()
 
-        // 1. Strict Security Audit: Never forward OTPs or PINs!
+        // 1. Strict Security Audit: Never forward OTPs or PINs under ANY circumstances!
         for (pattern in SECURITY_PATTERNS) {
             if (pattern.matcher(cleanBody).find()) {
                 return ParseResult.SecurityBlocked(
@@ -89,7 +85,16 @@ object BKashSmsParser {
             }
         }
 
-        // 2. Transaction ID Extraction
+        // 2. Sender and bKash Content Verification
+        val isSenderBkash = isBkashSender(sender)
+        val isBodyBkash = cleanBody.contains("bkash", ignoreCase = true) || cleanBody.contains("16247")
+        val hasTrxId = TRX_ID_REGEX.matcher(cleanBody).find()
+
+        if (!isSenderBkash && !(isBodyBkash && hasTrxId)) {
+            return ParseResult.NonBkashSender(sender ?: "unknown")
+        }
+
+        // 3. Transaction ID Extraction
         val trxMatcher = TRX_ID_REGEX.matcher(cleanBody)
         if (!trxMatcher.find()) {
             return ParseResult.NotATransaction(

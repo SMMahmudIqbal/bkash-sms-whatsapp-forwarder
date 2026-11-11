@@ -335,7 +335,10 @@ fun DashboardScreen(
                             Text(
                                 text = if (isEnabled) {
                                     val target = viewModel.preferences.recipientWhatsAppNumber
-                                    if (target.isNotBlank()) "Target: $target" else "Target: Not configured in settings"
+                                    val isGroup = viewModel.preferences.recipientType == "GROUP"
+                                    val targetLabel = if (isGroup) "Group" else "Number"
+                                    val modeLabel = if (viewModel.preferences.forwardMode == "RAW") "Raw Copy-Paste" else "Card"
+                                    if (target.isNotBlank()) "Target: $targetLabel ($target) • $modeLabel" else "Target: Not configured in settings"
                                 } else {
                                     "Forwarding is paused"
                                 },
@@ -532,8 +535,20 @@ fun DashboardScreen(
             testResult = testResult,
             onTestConnection = { viewModel.sendTestMessage() },
             onDismiss = { showSettingsDialog = false },
-            onSave = { mode, callMeBotKey, phoneId, token, recipient, webhook, header, retry ->
-                viewModel.saveSettings(mode, callMeBotKey, phoneId, token, recipient, webhook, header, retry)
+            onSave = { mode, recipientType, forwardMode, textMeBotKey, callMeBotKey, phoneId, token, recipient, webhook, header, retry ->
+                viewModel.saveSettings(
+                    mode,
+                    recipientType,
+                    forwardMode,
+                    textMeBotKey,
+                    callMeBotKey,
+                    phoneId,
+                    token,
+                    recipient,
+                    webhook,
+                    header,
+                    retry
+                )
             }
         )
     }

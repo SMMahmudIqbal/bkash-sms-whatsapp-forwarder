@@ -31,23 +31,60 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
      * Sends formatted text via configured WhatsApp integration.
      */
     suspend fun sendMessage(
-        recipientNumber: String = preferences.getFormattedRecipientNumber(),
+        recipient: String = preferences.getFormattedRecipient(),
         messageText: String,
         trxId: String = ""
     ): SendResult = withContext(Dispatchers.IO) {
-        if (recipientNumber.isBlank()) {
-            return@withContext SendResult.Failure("Recipient WhatsApp number is not configured.")
+        if (recipient.isBlank()) {
+            val error = if (preferences.recipientType == "GROUP") {
+                "WhatsApp Group ID is not configured. Enter your Group ID in Settings."
+            } else {
+                "Recipient WhatsApp number is not configured. Enter your number in Settings."
+            }
+            return@withContext SendResult.Failure(error)
         }
 
         when (preferences.apiMode) {
-            "CALLMEBOT" -> sendViaCallMeBot(recipientNumber, messageText)
-            "WEBHOOK" -> sendViaWebhook(recipientNumber, messageText, trxId)
-            else -> sendViaCloudApi(recipientNumber, messageText)
+            "TEXTMEBOT" -> sendViaTextMeBot(recipient, messageText)
+            "CALLMEBOT" -> sendViaCallMeBot(recipient, messageText)
+            "WEBHOOK" -> sendViaWebhook(recipient, messageText, trxId)
+            else -> sendViaCloudApi(recipient, messageText)
         }
     }
 
     /**
-     * Sends message using CallMeBot WhatsApp API (Fast, Free, 30-Second Setup for everyone).
+     * Sends message to WhatsApp Group or Individual via TextMeBot API (Direct Group support).
+     */
+    private fun sendViaTextMeBot(recipient: String, messageText: String): SendResult {
+        val apiKey = preferences.textMeBotApiKey
+        if (apiKey.isBlank()) {
+            return SendResult.Failure("TextMeBot API Key is missing. Enter your key in Settings.")
+        }
+
+        return try {
+            val encodedRecipient = URLEncoder.encode(recipient, "UTF-8")
+            val encodedText = URLEncoder.encode(messageText, "UTF-8")
+            val url = "https://api.textmebot.com/send.php?recipient=$encodedRecipient&apikey=$apiKey&text=$encodedText"
+
+            val request = Request.Builder().url(url).get().build()
+            val response = client.newCall(request).execute()
+            val responseString = response.body?.string() ?: ""
+
+            if (response.isSuccessful && !responseString.contains("ERROR", ignoreCase = true)) {
+                Log.i(TAG, "TextMeBot message delivered successfully to $recipient.")
+                SendResult.Success(messageId = null, responseBody = responseString)
+            } else {
+                SendResult.Failure("TextMeBot Error: $responseString", statusCode = response.code)
+            }
+        } catch (e: IOException) {
+            SendResult.Failure("Network error: ${e.localizedMessage}", isNetworkError = true)
+        } catch (e: Exception) {
+            SendResult.Failure("TextMeBot error: ${e.localizedMessage}")
+        }
+    }
+
+    /**
+     * Sends message using CallMeBot WhatsApp API (Fast, Free, 30-Second Setup for personal 1-to-1).
      */
     private fun sendViaCallMeBot(recipient: String, messageText: String): SendResult {
         val apiKey = preferences.callMeBotApiKey
@@ -163,33 +200,61 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
     }
 
     /**
-     * Sends message using Custom Webhook or third-party WhatsApp gateway.
+     * Sends message using Custom Webhook or third-party WhatsApp gateway (UltraMsg, Green API, Evolution, Baileys, etc.).
      */
     private fun sendViaWebhook(recipient: String, messageText: String, trxId: String): SendResult {
         val webhookUrl = preferences.customWebhookUrl
         if (webhookUrl.isBlank()) {
-            return SendResult.Failure("Custom Webhook URL is missing.")
+            return SendResult.Failure("Custom Webhook / Gateway URL is missing. Enter it in Settings.")
         }
 
         return try {
-            val request: Request = if (webhookUrl.contains("callmebot.com", ignoreCase = true)) {
+            val request: Request = when {
+                // Template URL with placeholders like {recipient}, {group}, {to}, {text}, {message}, {msg}
+                webhookUrl.contains("{recipient}") || webhookUrl.contains("{group}") ||
+                        webhookUrl.contains("{to}") || webhookUrl.contains("{text}") ||
+                        webhookUrl.contains("{message}") || webhookUrl.contains("{msg}") -> {
+                    val encodedText = URLEncoder.encode(messageText, "UTF-8")
+                    val encodedRecipient = URLEncoder.encode(recipient, "UTF-8")
+                    val resolvedUrl = webhookUrl
+                        .replace("{recipient}", encodedRecipient)
+                        .replace("{group}", encodedRecipient)
+                        .replace("{to}", encodedRecipient)
+                        .replace("{text}", encodedText)
+                        .replace("{message}", encodedText)
+                        .replace("{msg}", encodedText)
+                        .replace("{trxId}", trxId)
+                    Request.Builder().url(resolvedUrl).get().build()
+                }
+
                 // CallMeBot query param format: https://api.callmebot.com/whatsapp.php?phone=...&text=...&apikey=...
-                val encodedText = URLEncoder.encode(messageText, "UTF-8")
-                val urlWithParams = if (webhookUrl.contains("?")) {
-                    "$webhookUrl&text=$encodedText"
-                } else {
-                    "$webhookUrl?phone=$recipient&text=$encodedText"
+                webhookUrl.contains("callmebot.com", ignoreCase = true) -> {
+                    val encodedText = URLEncoder.encode(messageText, "UTF-8")
+                    val urlWithParams = if (webhookUrl.contains("?")) {
+                        "$webhookUrl&text=$encodedText"
+                    } else {
+                        "$webhookUrl?phone=$recipient&text=$encodedText"
+                    }
+                    Request.Builder().url(urlWithParams).get().build()
                 }
-                Request.Builder().url(urlWithParams).get().build()
-            } else {
-                val payload = JSONObject().apply {
-                    put("to", recipient)
-                    put("message", messageText)
-                    put("trx_id", trxId)
-                    put("timestamp", System.currentTimeMillis())
+
+                // Standard WhatsApp Gateway JSON POST (UltraMsg, Green API, Evolution, Baileys, etc.)
+                else -> {
+                    val payload = JSONObject().apply {
+                        put("to", recipient)
+                        put("chatId", recipient)
+                        put("recipient", recipient)
+                        put("group", recipient)
+                        put("message", messageText)
+                        put("text", messageText)
+                        put("body", messageText)
+                        put("raw", messageText)
+                        put("trx_id", trxId)
+                        put("timestamp", System.currentTimeMillis())
+                    }
+                    val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE)
+                    Request.Builder().url(webhookUrl).post(body).build()
                 }
-                val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE)
-                Request.Builder().url(webhookUrl).post(body).build()
             }
 
             val response = client.newCall(request).execute()
@@ -199,18 +264,18 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
                 SendResult.Success(messageId = null, responseBody = responseString)
             } else {
                 SendResult.Failure(
-                    errorMessage = "Webhook returned HTTP ${response.code}: $responseString",
+                    errorMessage = "Gateway returned HTTP ${response.code}: $responseString",
                     statusCode = response.code
                 )
             }
         } catch (e: IOException) {
             SendResult.Failure(
-                errorMessage = "Webhook network error: ${e.localizedMessage}",
+                errorMessage = "Gateway network error: ${e.localizedMessage}",
                 isNetworkError = true
             )
         } catch (e: Exception) {
             SendResult.Failure(
-                errorMessage = "Webhook failed: ${e.localizedMessage}",
+                errorMessage = "Gateway failed: ${e.localizedMessage}",
                 isNetworkError = false
             )
         }

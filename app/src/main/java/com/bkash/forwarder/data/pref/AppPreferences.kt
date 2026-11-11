@@ -13,7 +13,10 @@ class AppPreferences(context: Context) {
         private const val PREFS_NAME = "bkash_forwarder_prefs"
 
         private const val KEY_FORWARDING_ENABLED = "key_forwarding_enabled"
-        private const val KEY_API_MODE = "key_api_mode" // "CALLMEBOT", "CLOUD_API", or "WEBHOOK"
+        private const val KEY_API_MODE = "key_api_mode" // "TEXTMEBOT", "WEBHOOK", "CALLMEBOT", "CLOUD_API"
+        private const val KEY_RECIPIENT_TYPE = "key_recipient_type" // "GROUP" or "INDIVIDUAL"
+        private const val KEY_FORWARD_MODE = "key_forward_mode" // "RAW" or "FORMATTED"
+        private const val KEY_TEXTMEBOT_API_KEY = "key_textmebot_api_key"
         private const val KEY_CALLMEBOT_API_KEY = "key_callmebot_api_key"
         private const val KEY_PHONE_NUMBER_ID = "key_phone_number_id"
         private const val KEY_ACCESS_TOKEN = "key_access_token"
@@ -39,8 +42,20 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_FORWARDING_ENABLED, value).apply()
 
     var apiMode: String
-        get() = prefs.getString(KEY_API_MODE, "CALLMEBOT") ?: "CALLMEBOT"
+        get() = prefs.getString(KEY_API_MODE, "TEXTMEBOT") ?: "TEXTMEBOT"
         set(value) = prefs.edit().putString(KEY_API_MODE, value).apply()
+
+    var recipientType: String
+        get() = prefs.getString(KEY_RECIPIENT_TYPE, "GROUP") ?: "GROUP"
+        set(value) = prefs.edit().putString(KEY_RECIPIENT_TYPE, value).apply()
+
+    var forwardMode: String
+        get() = prefs.getString(KEY_FORWARD_MODE, "RAW") ?: "RAW"
+        set(value) = prefs.edit().putString(KEY_FORWARD_MODE, value).apply()
+
+    var textMeBotApiKey: String
+        get() = prefs.getString(KEY_TEXTMEBOT_API_KEY, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TEXTMEBOT_API_KEY, value.trim()).apply()
 
     var callMeBotApiKey: String
         get() = prefs.getString(KEY_CALLMEBOT_API_KEY, "") ?: ""
@@ -79,6 +94,26 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putBoolean(KEY_AUTO_RETRY_ENABLED, value).apply()
 
     /**
+     * Resolves the target recipient based on whether it is a WhatsApp Group or individual phone number.
+     * For Groups: ensures the ID ends with @g.us (e.g., 120363040377656518@g.us).
+     * For Individuals: formats with country code (e.g., 88017XXXXXXXX).
+     */
+    fun getFormattedRecipient(): String {
+        val trimmed = recipientWhatsAppNumber.trim()
+        if (trimmed.isBlank()) return ""
+
+        if (recipientType == "GROUP" || trimmed.contains("@g.us", ignoreCase = true)) {
+            return if (trimmed.endsWith("@g.us", ignoreCase = true)) {
+                trimmed
+            } else {
+                "${trimmed.replace(Regex("[^0-9]"), "")}@g.us"
+            }
+        }
+
+        return getFormattedRecipientNumber()
+    }
+
+    /**
      * Cleans up phone number to international E.164 standard without plus symbol (e.g., 88017XXXXXXXX)
      */
     fun getFormattedRecipientNumber(): String {
@@ -93,10 +128,13 @@ class AppPreferences(context: Context) {
     }
 
     fun isConfigured(): Boolean {
-        return if (apiMode == "CLOUD_API") {
-            cloudPhoneNumberId.isNotBlank() && cloudAccessToken.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
-        } else {
-            customWebhookUrl.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
+        if (recipientWhatsAppNumber.isBlank()) return false
+        return when (apiMode) {
+            "TEXTMEBOT" -> textMeBotApiKey.isNotBlank()
+            "CALLMEBOT" -> callMeBotApiKey.isNotBlank()
+            "CLOUD_API" -> cloudPhoneNumberId.isNotBlank() && cloudAccessToken.isNotBlank()
+            "WEBHOOK" -> customWebhookUrl.isNotBlank()
+            else -> false
         }
     }
 }

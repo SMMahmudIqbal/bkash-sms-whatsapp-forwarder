@@ -32,10 +32,15 @@ An automated Android background application that intercepts incoming **bKash** t
 - Built-in SQLite database with a `UNIQUE` index constraint on `trx_id`.
 - If an incoming SMS contains an already processed Transaction ID, it is flagged as `IGNORED_DUPLICATE` to prevent multiple WhatsApp alerts for the same transaction.
 
-### 4. Dual WhatsApp Dispatch Engine
-- **Meta WhatsApp Business Cloud API (Official)**: Direct integration with `https://graph.facebook.com/v21.0/{phone_number_id}/messages` using permanent System User Access Tokens.
-- **Custom Webhook / Gateway Support**: Full compatibility with CallMeBot or private WhatsApp gateway servers (Baileys, Evolution API, Green API, HTTP Webhooks).
-- **Test WhatsApp Message**: Test your connection directly from the settings dialog with instant delivery feedback.
+### 4. WhatsApp Group & Multi-Provider Dispatch Engine
+- **WhatsApp Group Forwarding**: Seamlessly forward directly into any WhatsApp Group via Group JIDs (e.g. `120363040377656518@g.us`).
+- **Exact Copy-Paste (Raw SMS) Mode**: Forwards the exact verbatim bKash transaction message received on your phone without modifying or reformatting the text.
+- **Structured Card Mode**: Alternative option to format transactions with icons, breakdown, and timestamps.
+- **TextMeBot Integration**: Instant WhatsApp Group & 1-to-1 message dispatching with zero server setup.
+- **Custom Webhook / WhatsApp Gateway Support**: Full compatibility with UltraMsg, Green API, Evolution API, Baileys, and custom HTTP Webhooks.
+- **Meta WhatsApp Business Cloud API (Official)**: Direct integration with Meta Graph API using permanent System User Access Tokens.
+- **Interactive In-App Share & Copy**: One-tap buttons to copy the raw bKash SMS or share directly to WhatsApp.
+- **Test WhatsApp Message**: Test your connection directly to your WhatsApp Group or phone with instant delivery feedback.
 
 ### 5. 24/7 Background Persistence & Resilience
 - **Foreground Monitoring Service**: Runs continuously with a low-priority ongoing notification.

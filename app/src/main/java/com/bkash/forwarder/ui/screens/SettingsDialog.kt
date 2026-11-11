@@ -64,6 +64,9 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onSave: (
         apiMode: String,
+        recipientType: String,
+        forwardMode: String,
+        textMeBotApiKey: String,
         callMeBotApiKey: String,
         phoneId: String,
         accessToken: String,
@@ -73,9 +76,12 @@ fun SettingsDialog(
         autoRetry: Boolean
     ) -> Unit
 ) {
+    var recipientType by remember { mutableStateOf(preferences.recipientType) }
+    var forwardMode by remember { mutableStateOf(preferences.forwardMode) }
     var apiMode by remember { mutableStateOf(preferences.apiMode) }
-    var callMeBotApiKey by remember { mutableStateOf(preferences.callMeBotApiKey) }
     var recipientNumber by remember { mutableStateOf(preferences.recipientWhatsAppNumber) }
+    var textMeBotApiKey by remember { mutableStateOf(preferences.textMeBotApiKey) }
+    var callMeBotApiKey by remember { mutableStateOf(preferences.callMeBotApiKey) }
     var phoneId by remember { mutableStateOf(preferences.cloudPhoneNumberId) }
     var accessToken by remember { mutableStateOf(preferences.cloudAccessToken) }
     var webhookUrl by remember { mutableStateOf(preferences.customWebhookUrl) }
@@ -119,7 +125,7 @@ fun SettingsDialog(
                     color = TextPrimary
                 )
                 Text(
-                    text = "Choose your delivery method & target number",
+                    text = "Configure auto-forwarding to your WhatsApp group",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                     fontSize = 12.sp
@@ -127,7 +133,15 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3-Mode Segmented Selector
+                // 1. Destination Target Selector: WhatsApp Group vs Individual Number
+                Text(
+                    text = "DESTINATION TARGET",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -137,45 +151,153 @@ fun SettingsDialog(
                         .padding(3.dp)
                 ) {
                     ModeTabItem(
-                        label = "CallMeBot",
-                        selected = apiMode == "CALLMEBOT",
-                        onClick = { apiMode = "CALLMEBOT" },
+                        label = "WhatsApp Group",
+                        selected = recipientType == "GROUP",
+                        onClick = {
+                            recipientType = "GROUP"
+                            if (apiMode == "CALLMEBOT") {
+                                apiMode = "TEXTMEBOT" // CallMeBot doesn't support groups
+                            }
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     ModeTabItem(
-                        label = "Cloud API",
-                        selected = apiMode == "CLOUD_API",
-                        onClick = { apiMode = "CLOUD_API" },
-                        modifier = Modifier.weight(1f)
-                    )
-                    ModeTabItem(
-                        label = "Webhook",
-                        selected = apiMode == "WEBHOOK",
-                        onClick = { apiMode = "WEBHOOK" },
+                        label = "Individual Number",
+                        selected = recipientType == "INDIVIDUAL",
+                        onClick = { recipientType = "INDIVIDUAL" },
                         modifier = Modifier.weight(1f)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Recipient WhatsApp Number (common to all)
-                OutlinedTextField(
-                    value = recipientNumber,
-                    onValueChange = { recipientNumber = it },
-                    label = { Text("Your WhatsApp Number") },
-                    placeholder = { Text("88017XXXXXXXX") },
-                    supportingText = { Text("Auto-formats with country code (e.g. 88017...)", color = TextMuted) },
-                    singleLine = true,
-                    colors = textFieldColors,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
+                // 2. Message Format Selector: Exact Copy-Paste (Raw) vs Formatted Receipt Card
+                Text(
+                    text = "FORWARDING FORMAT",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceSubtle)
+                        .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        .padding(3.dp)
+                ) {
+                    ModeTabItem(
+                        label = "Raw Copy-Paste",
+                        selected = forwardMode == "RAW",
+                        onClick = { forwardMode = "RAW" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
+                        label = "Receipt Card",
+                        selected = forwardMode == "FORMATTED",
+                        onClick = { forwardMode = "FORMATTED" },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (forwardMode == "RAW") {
+                        "Forwards the exact bKash message received on your phone without modifying text."
+                    } else {
+                        "Formats transaction into a structured card with emojis and line breakdown."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextMuted,
+                    fontSize = 11.sp
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
+                // 3. Target Identifier (Group ID or Phone Number)
+                if (recipientType == "GROUP") {
+                    OutlinedTextField(
+                        value = recipientNumber,
+                        onValueChange = { recipientNumber = it },
+                        label = { Text("WhatsApp Group ID") },
+                        placeholder = { Text("120363040377656518@g.us") },
+                        supportingText = {
+                            Text("Group JID (ends with @g.us) or numeric Group ID", color = TextMuted)
+                        },
+                        singleLine = true,
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = recipientNumber,
+                        onValueChange = { recipientNumber = it },
+                        label = { Text("Your WhatsApp Number") },
+                        placeholder = { Text("88017XXXXXXXX") },
+                        supportingText = {
+                            Text("International format with country code (e.g. 88017...)", color = TextMuted)
+                        },
+                        singleLine = true,
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // 4. API Provider Selector
+                Text(
+                    text = "DELIVERY PROVIDER",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextMuted,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.5.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(SurfaceSubtle)
+                        .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        .padding(3.dp)
+                ) {
+                    ModeTabItem(
+                        label = "TextMeBot",
+                        selected = apiMode == "TEXTMEBOT",
+                        onClick = { apiMode = "TEXTMEBOT" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
+                        label = "Gateway",
+                        selected = apiMode == "WEBHOOK",
+                        onClick = { apiMode = "WEBHOOK" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (recipientType == "INDIVIDUAL") {
+                        ModeTabItem(
+                            label = "CallMeBot",
+                            selected = apiMode == "CALLMEBOT",
+                            onClick = { apiMode = "CALLMEBOT" },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    ModeTabItem(
+                        label = "Cloud API",
+                        selected = apiMode == "CLOUD_API",
+                        onClick = { apiMode = "CLOUD_API" },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Provider-specific credentials
                 when (apiMode) {
-                    "CALLMEBOT" -> {
-                        // Helpful 30-sec CallMeBot guide card
+                    "TEXTMEBOT" -> {
                         Card(
                             shape = RoundedCornerShape(10.dp),
                             colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
@@ -185,7 +307,87 @@ fun SettingsDialog(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "⚡ 30-Second Free Setup:",
+                                    text = "⚡ TextMeBot (Group & 1-to-1):",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "1. Add TextMeBot to your WhatsApp group (or activate bot on WhatsApp).\n2. Enter your API Key below.\n3. Make sure the Group ID above ends with @g.us.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = textMeBotApiKey,
+                            onValueChange = { textMeBotApiKey = it },
+                            label = { Text("TextMeBot API Key") },
+                            placeholder = { Text("e.g. AB12CD34EF") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    "WEBHOOK" -> {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "🌐 WhatsApp Gateway / Webhook:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = "Supports UltraMsg, Green API, Evolution API, Baileys, or any HTTP webhook. Payload automatically passes 'to' / 'chatId' and 'message' / 'body'.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = webhookUrl,
+                            onValueChange = { webhookUrl = it },
+                            label = { Text("Gateway Endpoint URL") },
+                            placeholder = { Text("https://api.ultramsg.com/... or https://your-server.com/send") },
+                            supportingText = { Text("HTTP POST or GET with template variables", color = TextMuted) },
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    "CALLMEBOT" -> {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "⚡ 30-Second Setup (Individual Only):",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = TextPrimary
@@ -240,32 +442,20 @@ fun SettingsDialog(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-
-                    "WEBHOOK" -> {
-                        OutlinedTextField(
-                            value = webhookUrl,
-                            onValueChange = { webhookUrl = it },
-                            label = { Text("Gateway URL") },
-                            placeholder = { Text("https://your-server.com/webhook") },
-                            supportingText = { Text("Custom HTTP POST endpoint or gateway", color = TextMuted) },
-                            colors = textFieldColors,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
-                    value = customHeader,
-                    onValueChange = { customHeader = it },
-                    label = { Text("Alert Header") },
-                    singleLine = true,
-                    colors = textFieldColors,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                if (forwardMode == "FORMATTED") {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedTextField(
+                        value = customHeader,
+                        onValueChange = { customHeader = it },
+                        label = { Text("Alert Header") },
+                        singleLine = true,
+                        colors = textFieldColors,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -309,7 +499,19 @@ fun SettingsDialog(
                 // Test Message Button
                 OutlinedButton(
                     onClick = {
-                        onSave(apiMode, callMeBotApiKey, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
+                        onSave(
+                            apiMode,
+                            recipientType,
+                            forwardMode,
+                            textMeBotApiKey,
+                            callMeBotApiKey,
+                            phoneId,
+                            accessToken,
+                            recipientNumber,
+                            webhookUrl,
+                            customHeader,
+                            autoRetry
+                        )
                         onTestConnection()
                     },
                     modifier = Modifier
@@ -328,7 +530,10 @@ fun SettingsDialog(
                         Spacer(modifier = Modifier.size(8.dp))
                         Text("Sending Test...")
                     } else {
-                        Text("Send Test WhatsApp Message", style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = if (recipientType == "GROUP") "Send Test to WhatsApp Group" else "Send Test WhatsApp Message",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
 
@@ -362,7 +567,19 @@ fun SettingsDialog(
 
                     Button(
                         onClick = {
-                            onSave(apiMode, callMeBotApiKey, phoneId, accessToken, recipientNumber, webhookUrl, customHeader, autoRetry)
+                            onSave(
+                                apiMode,
+                                recipientType,
+                                forwardMode,
+                                textMeBotApiKey,
+                                callMeBotApiKey,
+                                phoneId,
+                                accessToken,
+                                recipientNumber,
+                                webhookUrl,
+                                customHeader,
+                                autoRetry
+                            )
                             onDismiss()
                         },
                         colors = ButtonDefaults.buttonColors(

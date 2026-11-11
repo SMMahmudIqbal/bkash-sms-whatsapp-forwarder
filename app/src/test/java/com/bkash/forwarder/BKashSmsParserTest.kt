@@ -68,4 +68,23 @@ class BKashSmsParserTest {
 
         assertTrue("Promo message without TrxID must be NotATransaction", result is ParseResult.NotATransaction)
     }
+
+    @Test
+    fun testNotificationWithGenericSenderParsedCorrectly() {
+        val sms = "bKash: You have received Tk 2,500.00 from 01812345678. Fee Tk 0.00. Balance Tk 9,230.50. TrxID BD89LK22 at 11/11/2026 18:30"
+        val result = BKashSmsParser.parse("Messages", sms)
+
+        assertTrue("Notification from generic SMS app with bKash text must be parsed", result is ParseResult.Success)
+        val tx = (result as ParseResult.Success).transaction
+        assertEquals("BD89LK22", tx.trxId)
+        assertEquals("2,500.00", tx.amount)
+    }
+
+    @Test
+    fun testOtpInNotificationWithGenericSenderBlocked() {
+        val sms = "bKash: Your verification code is 123456. Do not share your OTP or PIN."
+        val result = BKashSmsParser.parse("Messages", sms)
+
+        assertTrue("OTP from any sender must be SecurityBlocked", result is ParseResult.SecurityBlocked)
+    }
 }
