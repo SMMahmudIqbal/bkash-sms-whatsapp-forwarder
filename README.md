@@ -3,9 +3,10 @@
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20%28API%2026%E2%80%9336%29-3DDC84.svg?style=flat&logo=android)](https://android.com)
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin%202.2-7F52FF.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
 [![UI](https://img.shields.io/badge/UI-Jetpack%20Compose%20Material%203-4285F4.svg?style=flat&logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
-[![License](https://img.shields.io/badge/License-Private%20%2F%20Proprietary-red.svg?style=flat)]()
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)]()
+[![Visibility](https://img.shields.io/badge/Visibility-Public-success.svg?style=flat)]()
 
-An automated, private Android background application that intercepts incoming **bKash** transaction SMS notifications, parses transaction metadata (TrxID, Amount, Type, Counterpart, Balance, Fee, Reference), deduplicates via a local database, and securely dispatches them to a designated **WhatsApp** recipient using the **official WhatsApp Business Cloud API** (Meta Graph API) or custom webhooks.
+An automated Android background application that intercepts incoming **bKash** transaction SMS notifications, parses transaction metadata (TrxID, Amount, Type, Counterpart, Balance, Fee, Reference), deduplicates via a local database, and securely dispatches them to a designated **WhatsApp** recipient using the **official WhatsApp Business Cloud API** (Meta Graph API) or custom webhooks.
 
 ---
 
