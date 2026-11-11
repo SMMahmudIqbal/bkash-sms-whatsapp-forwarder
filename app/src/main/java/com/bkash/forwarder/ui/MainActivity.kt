@@ -38,11 +38,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             BKashForwarderTheme {
+                val hasSms = hasSmsPermissions()
                 DashboardScreen(
                     viewModel = viewModel,
                     onRequestBatteryOptimization = { requestIgnoreBatteryOptimization() },
                     onRequestSmsPermissions = { checkAndRequestPermissions() },
-                    hasSmsPermissions = hasSmsPermissions()
+                    onOpenAppSettings = { openAppSettings() },
+                    onOpenNotificationSettings = { openNotificationSettings() },
+                    hasSmsPermissions = hasSms
                 )
             }
         }
@@ -50,7 +53,33 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.checkBatteryOptimization()
+        viewModel.checkSystemStates()
+    }
+
+    private fun openAppSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", packageName, null)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(Settings.ACTION_SETTINGS)
+                startActivity(intent)
+            } catch (ignored: Exception) {}
+        }
+    }
+
+    private fun openNotificationSettings() {
+        try {
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(Settings.ACTION_SETTINGS)
+                startActivity(intent)
+            } catch (ignored: Exception) {}
+        }
     }
 
     private fun hasSmsPermissions(): Boolean {

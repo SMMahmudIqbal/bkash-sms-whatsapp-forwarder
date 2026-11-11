@@ -63,6 +63,8 @@ fun DashboardScreen(
     viewModel: ForwarderViewModel,
     onRequestBatteryOptimization: () -> Unit,
     onRequestSmsPermissions: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
     hasSmsPermissions: Boolean
 ) {
     val isEnabled by viewModel.isForwardingEnabled.collectAsState()
@@ -71,8 +73,10 @@ fun DashboardScreen(
     val isTesting by viewModel.isTesting.collectAsState()
     val testResult by viewModel.testResult.collectAsState()
     val isBatteryOptimized by viewModel.isBatteryOptimizationIgnored.collectAsState()
+    val isNotificationAccessEnabled by viewModel.isNotificationAccessEnabled.collectAsState()
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showRestrictedGuideDialog by remember { mutableStateOf(false) }
     var selectedRecord by remember { mutableStateOf<TransactionRecord?>(null) }
     var showClearConfirm by remember { mutableStateOf(false) }
 
@@ -142,37 +146,122 @@ fun DashboardScreen(
                 }
             }
 
-            // 2. Permissions Warning Banner (if SMS permissions missing)
-            if (!hasSmsPermissions) {
-                item {
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = StatusFailed.copy(alpha = 0.15f)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+            // 2. Detection Channel Status & Setup Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (!hasSmsPermissions && !isNotificationAccessEnabled) {
+                            StatusFailed.copy(alpha = 0.12f)
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
-                            modifier = Modifier.padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Interception Channels",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (hasSmsPermissions || isNotificationAccessEnabled) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(StatusSuccess.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "READY",
+                                        color = StatusSuccess,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Channel 1: Direct SMS Listener
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "SMS Permission Required",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = StatusFailed,
-                                    fontWeight = FontWeight.Bold
+                                    text = "Direct SMS Interception",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "Grant SMS permissions so the forwarder can detect bKash messages.",
+                                    text = if (hasSmsPermissions) "Active & monitoring bKash messages" else "Requires SMS permission (Tap 'How to Allow')",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    fontSize = 11.sp
                                 )
                             }
-                            Button(
-                                onClick = onRequestSmsPermissions,
-                                colors = ButtonDefaults.buttonColors(containerColor = StatusFailed)
-                            ) {
-                                Text("Grant")
+                            if (hasSmsPermissions) {
+                                Text(
+                                    text = "✅ Active",
+                                    color = StatusSuccess,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Button(
+                                    onClick = { showRestrictedGuideDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentBkash),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("How to Allow", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Channel 2: Notification Listener
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Notification Interception (Alternative)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = if (isNotificationAccessEnabled) "Active & capturing SMS/bKash alerts" else "Captures bKash alerts from notifications",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                    fontSize = 11.sp
+                                )
+                            }
+                            if (isNotificationAccessEnabled) {
+                                Text(
+                                    text = "✅ Active",
+                                    color = StatusSuccess,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Button(
+                                    onClick = onOpenNotificationSettings,
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Turn On", style = MaterialTheme.typography.labelSmall)
+                                }
                             }
                         }
                     }
@@ -461,6 +550,15 @@ fun DashboardScreen(
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    // Android 13/14/15 Restricted Settings Unlock Guide Dialog
+    if (showRestrictedGuideDialog) {
+        RestrictedSettingsGuideDialog(
+            onOpenAppSettings = onOpenAppSettings,
+            onOpenNotificationSettings = onOpenNotificationSettings,
+            onDismiss = { showRestrictedGuideDialog = false }
         )
     }
 }

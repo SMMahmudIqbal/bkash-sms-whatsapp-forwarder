@@ -35,14 +35,32 @@ class ForwarderViewModel(application: Application) : AndroidViewModel(applicatio
     private val _isBatteryOptimizationIgnored = MutableStateFlow(true)
     val isBatteryOptimizationIgnored: StateFlow<Boolean> = _isBatteryOptimizationIgnored.asStateFlow()
 
+    private val _isNotificationAccessEnabled = MutableStateFlow(false)
+    val isNotificationAccessEnabled: StateFlow<Boolean> = _isNotificationAccessEnabled.asStateFlow()
+
+    private val _hasSmsPermission = MutableStateFlow(false)
+    val hasSmsPermission: StateFlow<Boolean> = _hasSmsPermission.asStateFlow()
+
     init {
-        checkBatteryOptimization()
+        checkSystemStates()
+    }
+
+    fun checkSystemStates() {
+        val app = getApplication<Application>()
+        val powerManager = app.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        _isBatteryOptimizationIgnored.value = powerManager?.isIgnoringBatteryOptimizations(app.packageName) ?: true
+
+        val flat = android.provider.Settings.Secure.getString(app.contentResolver, "enabled_notification_listeners")
+        _isNotificationAccessEnabled.value = flat != null && flat.contains(app.packageName)
+
+        val receive = androidx.core.content.ContextCompat.checkSelfPermission(
+            app, android.Manifest.permission.RECEIVE_SMS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        _hasSmsPermission.value = receive
     }
 
     fun checkBatteryOptimization() {
-        val powerManager = getApplication<Application>().getSystemService(Context.POWER_SERVICE) as? PowerManager
-        val isIgnored = powerManager?.isIgnoringBatteryOptimizations(getApplication<Application>().packageName) ?: true
-        _isBatteryOptimizationIgnored.value = isIgnored
+        checkSystemStates()
     }
 
     fun setForwardingEnabled(enabled: Boolean) {

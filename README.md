@@ -88,22 +88,39 @@ An automated, private Android background application that intercepts incoming **
 
 ---
 
-## ⚙️ Configuration Guide
+## ⚙️ Configuration & Permission Guide
 
-1. **Install APK**: Download and install `bKash_SMS_Forwarder_v1.0.apk` onto your Android phone.
-2. **Grant Permissions**:
-   - Tap **Grant** on the dashboard to allow `RECEIVE_SMS` and `READ_SMS`.
-   - On Android 13+, allow notification posting so the background monitoring service stays alive.
-   - Tap **Whitelist** to exempt the app from battery optimization.
-3. **Configure WhatsApp**:
+### 🛡️ Android 13 / 14 / 15 / 16: "App was denied access to SMS" Fix
+On modern Android versions, Google automatically locks sensitive permissions (SMS) on downloaded APKs under a security feature called **Restricted Settings**. You can easily unlock it in 10 seconds:
+
+1. Open phone **Settings** ➔ **Apps** ➔ **bKash Forwarder** (or tap **"How to Allow"** ➔ **"Open App Settings Now"** directly inside the app).
+2. Look at the top-right corner and tap the **3 vertical dots (⋮)** (or **"More"**).
+3. Tap **"Allow restricted settings"** and confirm your fingerprint or screen lock PIN.
+4. Tap **Permissions** ➔ **SMS** ➔ select **Allow**.
+5. Return to the app — direct SMS forwarding is now fully unlocked!
+
+---
+
+### 🔔 Alternative: Notification Interception Engine
+If you prefer not to unlock restricted SMS settings or if your device firmware restricts SMS access:
+- Simply tap **"Turn On"** under **Notification Interception** in the dashboard.
+- This enables `BKashNotificationListenerService` which captures incoming bKash transaction alerts directly from your SMS app (Google Messages, Samsung Messages) and the official bKash app.
+- Both engines can be active simultaneously — built-in database deduplication guarantees **zero duplicate messages**.
+
+---
+
+## 🚀 Setup Steps
+
+1. **Install APK**: Download and install [`bKash_SMS_Forwarder_v1.0.apk`](./bKash_SMS_Forwarder_v1.0.apk) on your Android phone.
+2. **Enable Channel**: Follow the steps above to unlock SMS or enable Notification Access.
+3. **Exempt from Battery Saver**: Tap **Whitelist** to exempt the app from OEM battery optimizations.
+4. **Configure WhatsApp**:
    - Tap **⚙️ Settings** on the top right.
    - Enter your **WhatsApp Recipient Number** (format: `88017XXXXXXXX`).
-   - Choose your delivery mode:
-     - **Meta Cloud API**: Enter your `Phone Number ID` and `Access Token` from your Meta Developer App.
-     - **Custom Webhook**: Enter your gateway URL or CallMeBot URL.
+   - Enter your Meta **Phone Number ID** & **Access Token** (or select **Custom Webhook** for CallMeBot / private gateway).
    - Tap **Send Test WhatsApp Message** to verify your setup.
    - Tap **Save Settings**.
-4. **Activate**: Toggle the **Auto Forwarding Service** switch to **ON**. The app will now forward all incoming bKash transaction alerts automatically without any manual interaction.
+5. **Activate**: Toggle the **Auto Forwarding Service** switch to **ON**.
 
 ---
 
