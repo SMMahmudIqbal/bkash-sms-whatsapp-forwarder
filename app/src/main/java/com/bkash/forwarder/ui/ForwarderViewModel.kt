@@ -115,6 +115,8 @@ class ForwarderViewModel(application: Application) : AndroidViewModel(applicatio
         forwardMode: String,
         textMeBotApiKey: String,
         callMeBotApiKey: String,
+        telegramBotToken: String,
+        telegramChatId: String,
         phoneId: String,
         accessToken: String,
         recipient: String,
@@ -127,6 +129,8 @@ class ForwarderViewModel(application: Application) : AndroidViewModel(applicatio
         preferences.forwardMode = forwardMode
         preferences.textMeBotApiKey = textMeBotApiKey
         preferences.callMeBotApiKey = callMeBotApiKey
+        preferences.telegramBotToken = telegramBotToken
+        preferences.telegramChatId = telegramChatId
         preferences.cloudPhoneNumberId = phoneId
         preferences.cloudAccessToken = accessToken
         preferences.recipientWhatsAppNumber = recipient

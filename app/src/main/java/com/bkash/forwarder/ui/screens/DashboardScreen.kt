@@ -535,13 +535,15 @@ fun DashboardScreen(
             testResult = testResult,
             onTestConnection = { viewModel.sendTestMessage() },
             onDismiss = { showSettingsDialog = false },
-            onSave = { mode, recipientType, forwardMode, textMeBotKey, callMeBotKey, phoneId, token, recipient, webhook, header, retry ->
+            onSave = { mode, recipientType, forwardMode, textMeBotKey, callMeBotKey, telegramToken, telegramChat, phoneId, token, recipient, webhook, header, retry ->
                 viewModel.saveSettings(
                     mode,
                     recipientType,
                     forwardMode,
                     textMeBotKey,
                     callMeBotKey,
+                    telegramToken,
+                    telegramChat,
                     phoneId,
                     token,
                     recipient,

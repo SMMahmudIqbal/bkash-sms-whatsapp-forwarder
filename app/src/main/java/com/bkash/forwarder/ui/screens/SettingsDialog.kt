@@ -1,5 +1,7 @@
 package com.bkash.forwarder.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -68,6 +71,8 @@ fun SettingsDialog(
         forwardMode: String,
         textMeBotApiKey: String,
         callMeBotApiKey: String,
+        telegramBotToken: String,
+        telegramChatId: String,
         phoneId: String,
         accessToken: String,
         recipient: String,
@@ -76,12 +81,16 @@ fun SettingsDialog(
         autoRetry: Boolean
     ) -> Unit
 ) {
+    val context = LocalContext.current
+
     var recipientType by remember { mutableStateOf(preferences.recipientType) }
     var forwardMode by remember { mutableStateOf(preferences.forwardMode) }
     var apiMode by remember { mutableStateOf(preferences.apiMode) }
     var recipientNumber by remember { mutableStateOf(preferences.recipientWhatsAppNumber) }
     var textMeBotApiKey by remember { mutableStateOf(preferences.textMeBotApiKey) }
     var callMeBotApiKey by remember { mutableStateOf(preferences.callMeBotApiKey) }
+    var telegramBotToken by remember { mutableStateOf(preferences.telegramBotToken) }
+    var telegramChatId by remember { mutableStateOf(preferences.telegramChatId) }
     var phoneId by remember { mutableStateOf(preferences.cloudPhoneNumberId) }
     var accessToken by remember { mutableStateOf(preferences.cloudAccessToken) }
     var webhookUrl by remember { mutableStateOf(preferences.customWebhookUrl) }
@@ -119,13 +128,13 @@ fun SettingsDialog(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "WhatsApp Integration",
+                    text = "Forwarding Integration",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = TextPrimary
                 )
                 Text(
-                    text = "Configure auto-forwarding to your WhatsApp group",
+                    text = "Configure auto-forwarding to WhatsApp or Telegram",
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextSecondary,
                     fontSize = 12.sp
@@ -133,7 +142,7 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 1. Destination Target Selector: WhatsApp Group vs Individual Number
+                // 1. Destination Target: Group vs Individual
                 Text(
                     text = "DESTINATION TARGET",
                     style = MaterialTheme.typography.labelSmall,
@@ -151,14 +160,9 @@ fun SettingsDialog(
                         .padding(3.dp)
                 ) {
                     ModeTabItem(
-                        label = "WhatsApp Group",
+                        label = "Group",
                         selected = recipientType == "GROUP",
-                        onClick = {
-                            recipientType = "GROUP"
-                            if (apiMode == "CALLMEBOT") {
-                                apiMode = "TEXTMEBOT" // CallMeBot doesn't support groups
-                            }
-                        },
+                        onClick = { recipientType = "GROUP" },
                         modifier = Modifier.weight(1f)
                     )
                     ModeTabItem(
@@ -171,7 +175,7 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // 2. Message Format Selector: Exact Copy-Paste (Raw) vs Formatted Receipt Card
+                // 2. Format Selector: Raw Copy-Paste vs Receipt Card
                 Text(
                     text = "FORWARDING FORMAT",
                     style = MaterialTheme.typography.labelSmall,
@@ -215,15 +219,15 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // 3. Target Identifier (Group ID or Phone Number)
+                // 3. Target Identifier
                 if (recipientType == "GROUP") {
                     OutlinedTextField(
                         value = recipientNumber,
                         onValueChange = { recipientNumber = it },
-                        label = { Text("WhatsApp Group ID") },
+                        label = { Text("Group ID") },
                         placeholder = { Text("120363040377656518@g.us") },
                         supportingText = {
-                            Text("Group JID (ends with @g.us) or numeric Group ID", color = TextMuted)
+                            Text("WhatsApp Group JID (ends with @g.us) or Telegram Chat ID", color = TextMuted)
                         },
                         singleLine = true,
                         colors = textFieldColors,
@@ -235,9 +239,9 @@ fun SettingsDialog(
                         value = recipientNumber,
                         onValueChange = { recipientNumber = it },
                         label = { Text("Your WhatsApp Number") },
-                        placeholder = { Text("88017XXXXXXXX") },
+                        placeholder = { Text("8801540086883") },
                         supportingText = {
-                            Text("International format with country code (e.g. 88017...)", color = TextMuted)
+                            Text("International format with country code (e.g. 88015...)", color = TextMuted)
                         },
                         singleLine = true,
                         colors = textFieldColors,
@@ -248,7 +252,7 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // 4. API Provider Selector
+                // 4. Delivery Provider Selector
                 Text(
                     text = "DELIVERY PROVIDER",
                     style = MaterialTheme.typography.labelSmall,
@@ -266,6 +270,18 @@ fun SettingsDialog(
                         .padding(3.dp)
                 ) {
                     ModeTabItem(
+                        label = "CallMeBot",
+                        selected = apiMode == "CALLMEBOT",
+                        onClick = { apiMode = "CALLMEBOT" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
+                        label = "Telegram",
+                        selected = apiMode == "TELEGRAM",
+                        onClick = { apiMode = "TELEGRAM" },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModeTabItem(
                         label = "TextMeBot",
                         selected = apiMode == "TEXTMEBOT",
                         onClick = { apiMode = "TEXTMEBOT" },
@@ -277,26 +293,136 @@ fun SettingsDialog(
                         onClick = { apiMode = "WEBHOOK" },
                         modifier = Modifier.weight(1f)
                     )
-                    if (recipientType == "INDIVIDUAL") {
-                        ModeTabItem(
-                            label = "CallMeBot",
-                            selected = apiMode == "CALLMEBOT",
-                            onClick = { apiMode = "CALLMEBOT" },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    ModeTabItem(
-                        label = "Cloud API",
-                        selected = apiMode == "CLOUD_API",
-                        onClick = { apiMode = "CLOUD_API" },
-                        modifier = Modifier.weight(1f)
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Provider-specific credentials
                 when (apiMode) {
+                    "CALLMEBOT" -> {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = "⚡ CallMeBot (100% Free - Personal WhatsApp):",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Get your free API key in 5 seconds via WhatsApp:",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Button(
+                                    onClick = {
+                                        val uri = Uri.parse("https://api.whatsapp.com/send?phone=34941830748&text=I%20allow%20callmebot%20to%20send%20me%20messages")
+                                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            // Fallback
+                                        }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = AccentEmerald,
+                                        contentColor = PitchDark
+                                    ),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(38.dp)
+                                ) {
+                                    Text("1-Tap: Get Free Key on WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Send the pre-filled text in WhatsApp, then copy the API key you receive and paste it below.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextMuted,
+                                    fontSize = 10.sp,
+                                    lineHeight = 14.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = callMeBotApiKey,
+                            onValueChange = { callMeBotApiKey = it },
+                            label = { Text("CallMeBot API Key") },
+                            placeholder = { Text("e.g. 948201") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    "TELEGRAM" -> {
+                        Card(
+                            shape = RoundedCornerShape(10.dp),
+                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Text(
+                                    text = "✈️ Telegram Group Bot (100% Free Forever):",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "1. In Telegram, search @BotFather and send /newbot to create your bot.\n2. Copy the Bot Token and paste it below.\n3. Add your new bot to your Telegram Group.\n4. Enter the Group Chat ID (e.g. -100123456789) below.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = telegramBotToken,
+                            onValueChange = { telegramBotToken = it },
+                            label = { Text("Telegram Bot Token") },
+                            placeholder = { Text("123456789:ABCdefGHIjklMNOpqrs") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedTextField(
+                            value = telegramChatId,
+                            onValueChange = { telegramChatId = it },
+                            label = { Text("Telegram Chat / Group ID") },
+                            placeholder = { Text("-1001234567890 or @your_channel") },
+                            singleLine = true,
+                            colors = textFieldColors,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     "TEXTMEBOT" -> {
                         Card(
                             shape = RoundedCornerShape(10.dp),
@@ -307,14 +433,14 @@ fun SettingsDialog(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "⚡ TextMeBot (Group & 1-to-1):",
+                                    text = "⚠️ TextMeBot Notice (Requires Paid Plan):",
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary
+                                    color = AccentRose
                                 )
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Text(
-                                    text = "1. Add TextMeBot to your WhatsApp group (or activate bot on WhatsApp).\n2. Enter your API Key below.\n3. Make sure the Group ID above ends with @g.us.",
+                                    text = "TextMeBot requires purchasing an active key from textmebot.com. Without a paid plan, requests return 'Invalid Premium APIkey'.\n\n💡 Tip: For 100% free delivery, use CallMeBot (for WhatsApp) or Telegram (for Groups).",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = TextSecondary,
                                     fontSize = 11.sp,
@@ -328,8 +454,8 @@ fun SettingsDialog(
                         OutlinedTextField(
                             value = textMeBotApiKey,
                             onValueChange = { textMeBotApiKey = it },
-                            label = { Text("TextMeBot API Key") },
-                            placeholder = { Text("e.g. AB12CD34EF") },
+                            label = { Text("TextMeBot Premium API Key") },
+                            placeholder = { Text("Enter your paid API key") },
                             singleLine = true,
                             colors = textFieldColors,
                             shape = RoundedCornerShape(10.dp),
@@ -371,72 +497,6 @@ fun SettingsDialog(
                             label = { Text("Gateway Endpoint URL") },
                             placeholder = { Text("https://api.ultramsg.com/... or https://your-server.com/send") },
                             supportingText = { Text("HTTP POST or GET with template variables", color = TextMuted) },
-                            colors = textFieldColors,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    "CALLMEBOT" -> {
-                        Card(
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfaceSubtle),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = "⚡ 30-Second Setup (Individual Only):",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary
-                                )
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = "1. Send: 'I allow callmebot to send me messages' to +34 941 83 07 48 on WhatsApp.\n2. Paste the API key you receive below.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextSecondary,
-                                    fontSize = 11.sp,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedTextField(
-                            value = callMeBotApiKey,
-                            onValueChange = { callMeBotApiKey = it },
-                            label = { Text("CallMeBot API Key") },
-                            placeholder = { Text("e.g. 948201") },
-                            singleLine = true,
-                            colors = textFieldColors,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    "CLOUD_API" -> {
-                        OutlinedTextField(
-                            value = phoneId,
-                            onValueChange = { phoneId = it },
-                            label = { Text("Meta Phone Number ID") },
-                            placeholder = { Text("109283746592817") },
-                            singleLine = true,
-                            colors = textFieldColors,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedTextField(
-                            value = accessToken,
-                            onValueChange = { accessToken = it },
-                            label = { Text("System User Access Token") },
-                            placeholder = { Text("EAABw...") },
-                            supportingText = { Text("Permanent token from Meta Business Manager", color = TextMuted) },
                             colors = textFieldColors,
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -505,6 +565,8 @@ fun SettingsDialog(
                             forwardMode,
                             textMeBotApiKey,
                             callMeBotApiKey,
+                            telegramBotToken,
+                            telegramChatId,
                             phoneId,
                             accessToken,
                             recipientNumber,
@@ -518,7 +580,7 @@ fun SettingsDialog(
                         .fillMaxWidth()
                         .height(44.dp),
                     shape = RoundedCornerShape(10.dp),
-                    enabled = !isTesting && recipientNumber.isNotBlank(),
+                    enabled = !isTesting && (recipientNumber.isNotBlank() || telegramChatId.isNotBlank()),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary)
                 ) {
                     if (isTesting) {
@@ -530,10 +592,12 @@ fun SettingsDialog(
                         Spacer(modifier = Modifier.size(8.dp))
                         Text("Sending Test...")
                     } else {
-                        Text(
-                            text = if (recipientType == "GROUP") "Send Test to WhatsApp Group" else "Send Test WhatsApp Message",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        val testLabel = when {
+                            apiMode == "TELEGRAM" -> "Send Test to Telegram"
+                            recipientType == "GROUP" -> "Send Test to WhatsApp Group"
+                            else -> "Send Test WhatsApp Message"
+                        }
+                        Text(text = testLabel, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
 
@@ -573,6 +637,8 @@ fun SettingsDialog(
                                 forwardMode,
                                 textMeBotApiKey,
                                 callMeBotApiKey,
+                                telegramBotToken,
+                                telegramChatId,
                                 phoneId,
                                 accessToken,
                                 recipientNumber,

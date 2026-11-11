@@ -18,6 +18,8 @@ class AppPreferences(context: Context) {
         private const val KEY_FORWARD_MODE = "key_forward_mode" // "RAW" or "FORMATTED"
         private const val KEY_TEXTMEBOT_API_KEY = "key_textmebot_api_key"
         private const val KEY_CALLMEBOT_API_KEY = "key_callmebot_api_key"
+        private const val KEY_TELEGRAM_BOT_TOKEN = "key_telegram_bot_token"
+        private const val KEY_TELEGRAM_CHAT_ID = "key_telegram_chat_id"
         private const val KEY_PHONE_NUMBER_ID = "key_phone_number_id"
         private const val KEY_ACCESS_TOKEN = "key_access_token"
         private const val KEY_RECIPIENT_NUMBER = "key_recipient_number"
@@ -60,6 +62,14 @@ class AppPreferences(context: Context) {
     var callMeBotApiKey: String
         get() = prefs.getString(KEY_CALLMEBOT_API_KEY, "") ?: ""
         set(value) = prefs.edit().putString(KEY_CALLMEBOT_API_KEY, value.trim()).apply()
+
+    var telegramBotToken: String
+        get() = prefs.getString(KEY_TELEGRAM_BOT_TOKEN, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TELEGRAM_BOT_TOKEN, value.trim()).apply()
+
+    var telegramChatId: String
+        get() = prefs.getString(KEY_TELEGRAM_CHAT_ID, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_TELEGRAM_CHAT_ID, value.trim()).apply()
 
     var cloudPhoneNumberId: String
         get() = prefs.getString(KEY_PHONE_NUMBER_ID, "") ?: ""
@@ -128,12 +138,12 @@ class AppPreferences(context: Context) {
     }
 
     fun isConfigured(): Boolean {
-        if (recipientWhatsAppNumber.isBlank()) return false
         return when (apiMode) {
-            "TEXTMEBOT" -> textMeBotApiKey.isNotBlank()
-            "CALLMEBOT" -> callMeBotApiKey.isNotBlank()
-            "CLOUD_API" -> cloudPhoneNumberId.isNotBlank() && cloudAccessToken.isNotBlank()
-            "WEBHOOK" -> customWebhookUrl.isNotBlank()
+            "TEXTMEBOT" -> textMeBotApiKey.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
+            "CALLMEBOT" -> callMeBotApiKey.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
+            "TELEGRAM" -> telegramBotToken.isNotBlank() && (telegramChatId.isNotBlank() || recipientWhatsAppNumber.isNotBlank())
+            "CLOUD_API" -> cloudPhoneNumberId.isNotBlank() && cloudAccessToken.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
+            "WEBHOOK" -> customWebhookUrl.isNotBlank() && recipientWhatsAppNumber.isNotBlank()
             else -> false
         }
     }

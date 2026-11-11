@@ -47,6 +47,7 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
         when (preferences.apiMode) {
             "TEXTMEBOT" -> sendViaTextMeBot(recipient, messageText)
             "CALLMEBOT" -> sendViaCallMeBot(recipient, messageText)
+            "TELEGRAM" -> sendViaTelegram(recipient, messageText)
             "WEBHOOK" -> sendViaWebhook(recipient, messageText, trxId)
             else -> sendViaCloudApi(recipient, messageText)
         }
@@ -69,12 +70,18 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
             val request = Request.Builder().url(url).get().build()
             val response = client.newCall(request).execute()
             val responseString = response.body?.string() ?: ""
+            val cleanResponse = responseString.replace(Regex("<[^>]*>"), "").replace("\n", " ").trim()
 
-            if (response.isSuccessful && !responseString.contains("ERROR", ignoreCase = true)) {
+            if (response.isSuccessful && !cleanResponse.contains("ERROR", ignoreCase = true)) {
                 Log.i(TAG, "TextMeBot message delivered successfully to $recipient.")
-                SendResult.Success(messageId = null, responseBody = responseString)
+                SendResult.Success(messageId = null, responseBody = cleanResponse)
             } else {
-                SendResult.Failure("TextMeBot Error: $responseString", statusCode = response.code)
+                val userFriendlyMessage = if (cleanResponse.contains("Invalid Premium", ignoreCase = true)) {
+                    "Invalid TextMeBot Key. TextMeBot requires a paid subscription from textmebot.com. For a 100% free solution, switch to CallMeBot (WhatsApp) or Telegram Group in Settings."
+                } else {
+                    "TextMeBot Error: $cleanResponse"
+                }
+                SendResult.Failure(userFriendlyMessage, statusCode = response.code)
             }
         } catch (e: IOException) {
             SendResult.Failure("Network error: ${e.localizedMessage}", isNetworkError = true)
@@ -84,12 +91,50 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
     }
 
     /**
+     * Sends message using Telegram Bot API (100% Free, Unlimited, Official Group Bot support).
+     */
+    private fun sendViaTelegram(recipient: String, messageText: String): SendResult {
+        val token = preferences.telegramBotToken
+        if (token.isBlank()) {
+            return SendResult.Failure("Telegram Bot Token is missing. Create one for free with @BotFather.")
+        }
+
+        val chatId = if (preferences.telegramChatId.isNotBlank()) preferences.telegramChatId else recipient
+        if (chatId.isBlank()) {
+            return SendResult.Failure("Telegram Chat/Group ID is missing.")
+        }
+
+        return try {
+            val endpoint = "https://api.telegram.org/bot$token/sendMessage"
+            val payload = JSONObject().apply {
+                put("chat_id", chatId)
+                put("text", messageText)
+            }
+            val body = payload.toString().toRequestBody(JSON_MEDIA_TYPE)
+            val request = Request.Builder().url(endpoint).post(body).build()
+            val response = client.newCall(request).execute()
+            val responseString = response.body?.string() ?: ""
+
+            if (response.isSuccessful) {
+                Log.i(TAG, "Telegram message delivered successfully to $chatId.")
+                SendResult.Success(messageId = null, responseBody = responseString)
+            } else {
+                SendResult.Failure("Telegram Error (${response.code}): $responseString", statusCode = response.code)
+            }
+        } catch (e: IOException) {
+            SendResult.Failure("Network error: ${e.localizedMessage}", isNetworkError = true)
+        } catch (e: Exception) {
+            SendResult.Failure("Telegram error: ${e.localizedMessage}")
+        }
+    }
+
+    /**
      * Sends message using CallMeBot WhatsApp API (Fast, Free, 30-Second Setup for personal 1-to-1).
      */
     private fun sendViaCallMeBot(recipient: String, messageText: String): SendResult {
         val apiKey = preferences.callMeBotApiKey
         if (apiKey.isBlank()) {
-            return SendResult.Failure("CallMeBot API Key is missing. Enter your key in Settings.")
+            return SendResult.Failure("CallMeBot API Key is missing. Tap 'Get Free Key' in Settings.")
         }
 
         val cleanPhone = preferences.getFormattedRecipientNumber()
@@ -103,12 +148,18 @@ class WhatsAppApiService(private val preferences: AppPreferences) {
             val request = Request.Builder().url(url).get().build()
             val response = client.newCall(request).execute()
             val responseString = response.body?.string() ?: ""
+            val cleanResponse = responseString.replace(Regex("<[^>]*>"), "").replace("\n", " ").trim()
 
-            if (response.isSuccessful && !responseString.contains("ERROR", ignoreCase = true)) {
+            if (response.isSuccessful && !cleanResponse.contains("ERROR", ignoreCase = true)) {
                 Log.i(TAG, "CallMeBot message delivered successfully.")
-                SendResult.Success(messageId = null, responseBody = responseString)
+                SendResult.Success(messageId = null, responseBody = cleanResponse)
             } else {
-                SendResult.Failure("CallMeBot Error: $responseString", statusCode = response.code)
+                val userFriendlyMessage = if (cleanResponse.contains("apikey", ignoreCase = true) || cleanResponse.contains("invalid", ignoreCase = true)) {
+                    "CallMeBot: Invalid API Key. Tap 'Get Free Key' in Settings to receive your active key on WhatsApp."
+                } else {
+                    "CallMeBot Error: $cleanResponse"
+                }
+                SendResult.Failure(userFriendlyMessage, statusCode = response.code)
             }
         } catch (e: IOException) {
             SendResult.Failure("Network error: ${e.localizedMessage}", isNetworkError = true)
